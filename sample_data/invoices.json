@@ -1,0 +1,85 @@
+{
+  "data": [
+    {
+      "id": "INV-1001",
+      "customer_name": "Comercial Aurora",
+      "customer_email": "pagos@aurora.mx",
+      "amount": 8200.0,
+      "currency": "MXN",
+      "due_date": "2026-08-01",
+      "status": "paid"
+    },
+    {
+      "id": "INV-1002",
+      "customer_name": "Distribuidora del Norte",
+      "customer_email": "cuentas@delnorte.mx",
+      "amount": 23400.75,
+      "currency": "MXN",
+      "due_date": "2026-08-28",
+      "status": "pending"
+    },
+    {
+      "id": "INV-1003",
+      "customer_name": "Empresa Demo",
+      "customer_email": "cliente@empresa.com",
+      "amount": 15000.5,
+      "currency": "MXN",
+      "due_date": "2026-08-16",
+      "status": "pending"
+    },
+    {
+      "id": "INV-1004",
+      "customer_name": "Grupo Meridiano",
+      "customer_email": "finanzas@meridiano.mx",
+      "amount": 4780.0,
+      "currency": "MXN",
+      "due_date": "2026-08-11",
+      "status": "pending"
+    },
+    {
+      "id": "INV-1005",
+      "customer_name": "Textiles del Bajio",
+      "customer_email": "tesoreria@textilesbajio.mx",
+      "amount": 61250.0,
+      "currency": "MXN",
+      "due_date": "2026-08-06",
+      "status": "pending"
+    },
+    {
+      "id": "INV-1006",
+      "customer_name": "Servicios Integrales Lopez",
+      "customer_email": "admin@silopez.mx",
+      "amount": 3120.3,
+      "currency": "MXN",
+      "due_date": "2026-08-18",
+      "status": "pending"
+    },
+    {
+      "id": "INV-1007",
+      "customer_name": "Logistica Pacifico",
+      "customer_email": "pagos@logpacifico.mx",
+      "amount": 98500.0,
+      "currency": "MXN",
+      "due_date": "2026-07-27",
+      "status": "pending"
+    },
+    {
+      "id": "INV-1008",
+      "customer_name": "Constructora Zenit",
+      "customer_email": "contabilidad@zenit.mx",
+      "amount": 17300.0,
+      "currency": "MXN",
+      "due_date": "2026-07-12",
+      "status": "cancelled"
+    },
+    {
+      "id": "INV-9999",
+      "customer_name": "Registro Corrupto",
+      "customer_email": "soporte@empresa.com",
+      "amount": 999.99,
+      "currency": "MXN",
+      "due_date": "2026-13-45",
+      "status": "pending"
+    }
+  ]
+}
