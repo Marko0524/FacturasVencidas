@@ -2,6 +2,8 @@
 
 Automatiza el seguimiento de facturas vencidas: consulta las facturas, aplica las reglas de negocio, notifica al cliente y escala a Operaciones cuando el atraso lo amerita — sin duplicar notificaciones si el proceso se vuelve a ejecutar.
 
+**[Documento de aterrizaje del requerimiento](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx)** — el alcance acordado, los supuestos y las preguntas de las que salen las reglas de abajo.
+
 **[Ver la demostración en video](https://drive.google.com/file/d/1Kdgq6kyXG3PdCoeUaKBsaVazBfckrMcu/view?usp=sharing)** — la solución en ejecución: reglas de negocio, idempotencia, manejo de errores y el contenedor.
 
 ---
@@ -21,6 +23,8 @@ Esta aplicación resuelve ese ciclo como un **job desatendido**:
 | Registro con datos inválidos | Se descarta con `WARNING`, el resto continúa |
 
 El umbral de 10 días es configurable (`OVERDUE_ALERT_THRESHOLD_DAYS`). El envío de correo se **simula con `logging`**; no se conecta a ningún proveedor real.
+
+De dónde salen estas reglas, qué se dio por supuesto y qué quedó fuera del alcance: [`Bloque 1 - Aterrizaje de Requerimiento.docx`](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx).
 
 ---
 
