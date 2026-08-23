@@ -1,5 +1,9 @@
-# Secrets - never commit the real .env
+# Secrets - never commit a real .env, in any of its variants.
+# The bare `.env` rule missed .env.local and .env.production, so match them all
+# and let the template through explicitly.
 .env
+.env.*
+!.env.example
 
 # Working notes, not part of the deliverable
 PROMPT.md
@@ -17,3 +21,9 @@ venv/
 # Editors
 .idea/
 .vscode/
+
+# Local tooling working directory: lives inside the repo, must never enter it
+.claude/
+
+# Office lock files, created while a .docx in docs/ is open
+~$*
