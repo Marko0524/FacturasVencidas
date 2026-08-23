@@ -1,16 +1,18 @@
-"""Genera docs/preguntas-tecnicas.docx a partir del markdown.
+"""Genera la versión .docx de un documento de docs/ a partir de su markdown.
 
 El markdown es la fuente de verdad: el .docx se regenera, no se edita a mano.
 Así el documento de Word nunca se desincroniza del repositorio.
 
-    pip install python-docx
-    python scripts/generar_docx.py
+    pip install -r requirements-dev.txt
+    python scripts/generar_docx.py                       # todos los documentos
+    python scripts/generar_docx.py docs/otro.md          # sólo uno
 """
 
 from __future__ import annotations
 
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 from docx import Document
@@ -20,8 +22,12 @@ from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor, Inches
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SOURCE = PROJECT_ROOT / "docs" / "preguntas-tecnicas.md"
-TARGET = PROJECT_ROOT / "docs" / "preguntas-tecnicas.docx"
+
+# Documentos que se publican también en Word. Los demás viven sólo en markdown.
+DOCUMENTOS = (
+    PROJECT_ROOT / "docs" / "preguntas-tecnicas.md",
+    PROJECT_ROOT / "docs" / "low-code-vs-codigo.md",
+)
 
 # Misma paleta que los diagramas del asistente, para que el paquete se vea de una pieza.
 TEAL = RGBColor(0x0E, 0x6E, 0x7A)
@@ -33,6 +39,7 @@ HEADER_BG = "E7EDF1"
 BODY_FONT = "Georgia"
 HEAD_FONT = "Segoe UI Semibold"
 MONO_FONT = "Consolas"
+CODE_BG = "F1F5F7"
 
 # Dos pasadas, porque el markdown anida: **negrita con *cursiva* dentro**.
 # Una sola expresión plana dejaría los asteriscos literales en el documento.
@@ -176,6 +183,22 @@ def add_callout(doc: Document, lines: list[str]) -> None:
             run.font.size = Pt(9.5)
 
 
+def add_code(doc: Document, lines: list[str]) -> None:
+    """Bloque de código: monoespaciado, sombreado y sin interpretar formato."""
+    for i, line in enumerate(lines):
+        p = doc.add_paragraph()
+        pf = p.paragraph_format
+        pf.left_indent = Inches(0.25)
+        pf.space_before = Pt(6 if i == 0 else 0)
+        pf.space_after = Pt(6 if i == len(lines) - 1 else 0)
+        pf.line_spacing = 1.0
+        shade_paragraph(p, CODE_BG)
+        # El texto va literal: dentro de un bloque de código no hay markdown.
+        run = p.add_run(line or " ")
+        run.font.name = MONO_FONT
+        run.font.size = Pt(9)
+
+
 def add_table(doc: Document, rows: list[list[str]]) -> None:
     header, *body = rows
     table = doc.add_table(rows=len(rows), cols=len(header))
@@ -215,17 +238,19 @@ def parse_table(lines: list[str]) -> list[list[str]]:
     return rows
 
 
-def build() -> None:
+def build(source: Path) -> Path:
+    target = source.with_suffix(".docx")
     doc = Document()
     style_base(doc)
     add_page_numbers(doc)
 
-    author = git_user_name()
-    doc.core_properties.title = "Preguntas técnicas conceptuales"
-    doc.core_properties.author = author
-    doc.core_properties.comments = "Generado desde docs/preguntas-tecnicas.md"
+    lines = source.read_text(encoding="utf-8").split("\n")
+    titulo = next((l.strip()[2:] for l in lines if l.startswith("# ")), source.stem)
 
-    lines = SOURCE.read_text(encoding="utf-8").split("\n")
+    doc.core_properties.title = titulo
+    doc.core_properties.author = git_user_name()
+    doc.core_properties.comments = f"Generado desde {source.name}"
+
     i = 0
 
     while i < len(lines):
@@ -234,6 +259,17 @@ def build() -> None:
 
         if not stripped or stripped == "---":
             i += 1
+            continue
+
+        # Bloque de código: se copia literal hasta la valla de cierre.
+        if stripped.startswith("```"):
+            i += 1
+            block = []
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                block.append(lines[i].rstrip())
+                i += 1
+            i += 1  # salta la valla de cierre
+            add_code(doc, block)
             continue
 
         if stripped.startswith("# "):
@@ -293,9 +329,20 @@ def build() -> None:
         add_runs(p, stripped)
         i += 1
 
-    doc.save(TARGET)
-    print(f"escrito {TARGET.relative_to(PROJECT_ROOT)} (autor: {author})")
+    doc.save(target)
+    return target
+
+
+def main(argv: list[str]) -> int:
+    fuentes = [Path(a).resolve() for a in argv] if argv else list(DOCUMENTOS)
+    for fuente in fuentes:
+        if not fuente.exists():
+            print(f"no existe: {fuente}")
+            return 1
+        destino = build(fuente)
+        print(f"escrito {destino.relative_to(PROJECT_ROOT)}")
+    return 0
 
 
 if __name__ == "__main__":
-    build()
+    raise SystemExit(main(sys.argv[1:]))

@@ -388,7 +388,19 @@ python scripts/generar_docx.py
 
 ---
 
-## 14. Limitaciones y siguientes pasos
+## 14. Power Automate frente a Python
+
+Comparación de este mismo job hecho en *low-code* contra código, en [`docs/low-code-vs-codigo.md`](docs/low-code-vs-codigo.md) y en Word en [`docs/low-code-vs-codigo.docx`](docs/low-code-vs-codigo.docx).
+
+**Veredicto:** Python fue la decisión correcta, pero no por goleada, y lo que la decide es **el estado por entidad** — no la llamada a la API ni las reglas de negocio, que Power Automate maneja bien. Fue la idempotencia con garantía *at-least-once* y las reglas de fecha que necesitan pruebas.
+
+Los tres lugares donde el *low-code* se rompe para este caso: la aritmética de fechas queda irrevisable dentro de una expresión del diseñador, la idempotencia hay que construirla sobre una lista externa sin escritura atómica, y no existe framework de pruebas — así que no hay compuerta antes de producción.
+
+Donde Power Automate gana de verdad: humanos en el ciclo (aprobaciones, tarjetas en Teams), pegamento entre servicios de Microsoft 365, y que no hay imagen que parchear. La pregunta que más rápido decide no es técnica: **¿quién es el dueño del cambio?**
+
+---
+
+## 15. Limitaciones y siguientes pasos
 
 Lo que quedó fuera a propósito por el alcance de la prueba:
 
