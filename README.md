@@ -375,7 +375,13 @@ Los tres puntos que sostienen el diseño:
 
 ---
 
-## 13. Limitaciones y siguientes pasos
+## 13. Preguntas técnicas conceptuales
+
+Respuestas en [`docs/preguntas-tecnicas.md`](docs/preguntas-tecnicas.md), ancladas en lo que este repositorio implementa: webhook frente a API y polling, idempotencia, ROI de una automatización, consumo de una API REST desde Power Automate y desde Python, gestión de secretos, alucinaciones y fuga de datos, y estrategia de ramas y CI/CD.
+
+---
+
+## 14. Limitaciones y siguientes pasos
 
 Lo que quedó fuera a propósito por el alcance de la prueba:
 
