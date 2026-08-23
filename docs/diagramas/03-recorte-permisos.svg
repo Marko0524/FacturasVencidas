@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" width="900" height="330" role="img" aria-label="Comparacion de dos disenos: sin recorte por permisos, el indice devuelve fragmentos de polizas ajenas y la respuesta filtra informacion; con recorte, la consulta se filtra por los grupos del usuario y solo llegan al modelo los fragmentos permitidos.">
+  <title>El filtro por ACL en la recuperación es la única arista que separa los dos diseños</title>
+  <style>
+    .bg    { fill: #FBFCFD; }
+    .panel { fill: #E7EDF1; stroke: #D3DCE2; stroke-width: 1; }
+    .box   { fill: #FFFFFF; stroke: #B4C1C9; stroke-width: 1; }
+    .rag   { fill: #E2F0F1; stroke: #0E6E7A; stroke-width: 1.2; }
+    .dny   { fill: #F7E7E4; stroke: #A03028; stroke-width: 1.2; }
+    .t     { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #14202B; }
+    .tr    { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #0E6E7A; }
+    .td    { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #A03028; }
+    .s     { font-family: Georgia, "Times New Roman", serif; font-size: 11.5px; fill: #4A5A68; }
+    .e     { stroke: #8E9CA6; stroke-width: 1.4; fill: none; }
+  </style>
+
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#8E9CA6"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="900" height="330"/>
+
+  <rect class="panel" x="14" y="10" width="422" height="308" rx="3"/>
+  <text class="td" x="225" y="36" text-anchor="middle">Sin recorte por permisos</text>
+
+  <rect class="box" x="60" y="52" width="330" height="34" rx="3"/>
+  <text class="s" x="225" y="74" text-anchor="middle">Usuario pregunta por su cobertura</text>
+  <line class="e" x1="225" y1="86" x2="225" y2="106" marker-end="url(#ar)"/>
+
+  <rect class="box" x="60" y="110" width="330" height="46" rx="3"/>
+  <text class="s" x="225" y="130" text-anchor="middle">Índice devuelve los mejores fragmentos</text>
+  <text class="s" x="225" y="147" text-anchor="middle">póliza propia + póliza de otro cliente</text>
+  <line class="e" x1="225" y1="156" x2="225" y2="176" marker-end="url(#ar)"/>
+
+  <rect class="box" x="60" y="180" width="330" height="34" rx="3"/>
+  <text class="s" x="225" y="202" text-anchor="middle">Todo entra al prompt como contexto</text>
+  <line class="e" x1="225" y1="214" x2="225" y2="234" marker-end="url(#ar)"/>
+
+  <rect class="dny" x="60" y="238" width="330" height="52" rx="3"/>
+  <text class="td" x="225" y="260" text-anchor="middle">Fuga entre clientes</text>
+  <text class="s" x="225" y="278" text-anchor="middle">la respuesta cita un documento ajeno</text>
+
+  <rect class="panel" x="464" y="10" width="422" height="308" rx="3"/>
+  <text class="tr" x="675" y="36" text-anchor="middle">Con recorte por permisos</text>
+
+  <rect class="box" x="510" y="52" width="330" height="34" rx="3"/>
+  <text class="s" x="675" y="74" text-anchor="middle">Usuario + sus grupos de Entra ID</text>
+  <line class="e" x1="675" y1="86" x2="675" y2="106" marker-end="url(#ar)"/>
+
+  <rect class="rag" x="510" y="110" width="330" height="46" rx="3"/>
+  <text class="s" x="675" y="130" text-anchor="middle">La consulta lleva filtro por ACL</text>
+  <text class="s" x="675" y="147" text-anchor="middle">los fragmentos ajenos no son candidatos</text>
+  <line class="e" x1="675" y1="156" x2="675" y2="176" marker-end="url(#ar)"/>
+
+  <rect class="box" x="510" y="180" width="330" height="34" rx="3"/>
+  <text class="s" x="675" y="202" text-anchor="middle">Sólo lo permitido entra al prompt</text>
+  <line class="e" x1="675" y1="214" x2="675" y2="234" marker-end="url(#ar)"/>
+
+  <rect class="rag" x="510" y="238" width="330" height="52" rx="3"/>
+  <text class="tr" x="675" y="260" text-anchor="middle">Respuesta acotada</text>
+  <text class="s" x="675" y="278" text-anchor="middle">no puede citar lo que nunca recuperó</text>
+</svg>

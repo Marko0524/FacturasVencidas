@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" role="img" aria-label="Diagrama de arquitectura: la SPA de React autentica con Entra ID y pasa por API Management hasta el orquestador de Python, que se bifurca en dos caminos de datos distintos: recuperacion de documentos en Azure AI Search filtrada por ACL, y consultas transaccionales al API de facturacion con identidad delegada. Azure OpenAI solo recibe el contexto ya recortado.">
+  <title>Arquitectura del asistente: dos formas de datos, dos caminos</title>
+  <style>
+    .bg   { fill: #FBFCFD; }
+    .box  { fill: #FFFFFF; stroke: #B4C1C9; stroke-width: 1; }
+    .soft { fill: #E7EDF1; stroke: #B4C1C9; stroke-width: 1; }
+    .rag  { fill: #E2F0F1; stroke: #0E6E7A; stroke-width: 1.2; }
+    .txn  { fill: #F6EDDD; stroke: #9A6212; stroke-width: 1.2; }
+    .t    { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #14202B; }
+    .s    { font-family: Georgia, "Times New Roman", serif; font-size: 11.5px; fill: #4A5A68; }
+    .l    { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 10.5px; fill: #75868F; }
+    .lr   { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 10.5px; fill: #0E6E7A; }
+    .lt   { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 10.5px; fill: #9A6212; }
+    .e    { stroke: #8E9CA6; stroke-width: 1.4; fill: none; }
+    .er   { stroke: #0E6E7A; stroke-width: 1.6; fill: none; }
+    .et   { stroke: #9A6212; stroke-width: 1.6; fill: none; }
+  </style>
+
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#8E9CA6"/>
+    </marker>
+    <marker id="arRag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#0E6E7A"/>
+    </marker>
+    <marker id="arTxn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#9A6212"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="900" height="560"/>
+
+  <rect class="box" x="310" y="28" width="280" height="52" rx="3"/>
+  <text class="t" x="450" y="50" text-anchor="middle">SPA en React</text>
+  <text class="s" x="450" y="68" text-anchor="middle">chat, citas visibles, feedback</text>
+
+  <line class="e" x1="450" y1="80" x2="450" y2="114" marker-end="url(#ar)"/>
+  <text class="l" x="462" y="101">token de Entra ID (MSAL)</text>
+
+  <rect class="box" x="310" y="118" width="280" height="52" rx="3"/>
+  <text class="t" x="450" y="140" text-anchor="middle">API Management</text>
+  <text class="s" x="450" y="158" text-anchor="middle">cuota por usuario, WAF</text>
+
+  <line class="e" x1="450" y1="170" x2="450" y2="204" marker-end="url(#ar)"/>
+
+  <rect class="soft" x="250" y="208" width="400" height="82" rx="3"/>
+  <text class="t" x="450" y="232" text-anchor="middle">Orquestador en Python · FastAPI</text>
+  <text class="s" x="450" y="252" text-anchor="middle">clasificador de intención · guardrails</text>
+  <text class="s" x="450" y="270" text-anchor="middle">function calling · trazas</text>
+
+  <path class="er" d="M 300 290 L 150 344" marker-end="url(#arRag)"/>
+  <text class="lr" x="150" y="322" text-anchor="middle">documentos · filtro ACL</text>
+
+  <line class="e" x1="450" y1="290" x2="450" y2="344" marker-end="url(#ar)"/>
+  <text class="l" x="462" y="322">contexto recortado</text>
+
+  <path class="et" d="M 600 290 L 750 344" marker-end="url(#arTxn)"/>
+  <text class="lt" x="750" y="322" text-anchor="middle">transacciones · on-behalf-of</text>
+
+  <rect class="rag" x="25" y="348" width="250" height="66" rx="3"/>
+  <text class="t" x="150" y="371" text-anchor="middle">Azure AI Search</text>
+  <text class="s" x="150" y="389" text-anchor="middle">híbrido + reranker semántico</text>
+  <text class="s" x="150" y="405" text-anchor="middle">cada chunk lleva su ACL</text>
+
+  <rect class="box" x="325" y="348" width="250" height="66" rx="3"/>
+  <text class="t" x="450" y="371" text-anchor="middle">Azure OpenAI</text>
+  <text class="s" x="450" y="389" text-anchor="middle">gpt-4o para generación</text>
+  <text class="s" x="450" y="405" text-anchor="middle">embeddings para el índice</text>
+
+  <rect class="txn" x="625" y="348" width="250" height="66" rx="3"/>
+  <text class="t" x="750" y="371" text-anchor="middle">API de facturación</text>
+  <text class="s" x="750" y="389" text-anchor="middle">sistema de registro</text>
+  <text class="s" x="750" y="405" text-anchor="middle">autoriza por sí mismo</text>
+
+  <line class="e" x1="150" y1="458" x2="150" y2="418" marker-end="url(#ar)"/>
+  <text class="l" x="160" y="440">ingesta</text>
+
+  <rect class="box" x="25" y="462" width="250" height="58" rx="3"/>
+  <text class="t" x="150" y="484" text-anchor="middle">Blob Storage</text>
+  <text class="s" x="150" y="502" text-anchor="middle">pólizas, condiciones, FAQ</text>
+
+  <line class="e" x1="750" y1="458" x2="750" y2="418" marker-end="url(#ar)"/>
+  <text class="l" x="760" y="440">lectura</text>
+
+  <rect class="box" x="625" y="462" width="250" height="58" rx="3"/>
+  <text class="t" x="750" y="484" text-anchor="middle">ERP / BD de facturación</text>
+  <text class="s" x="750" y="502" text-anchor="middle">nunca se vectoriza</text>
+</svg>

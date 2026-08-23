@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" width="900" height="620" role="img" aria-label="Diagrama de flujo: el mensaje pasa por redaccion de PII y prompt shields, luego por el clasificador de intencion, que abre dos caminos con verificaciones: consulta de poliza y estado de factura. Toda rama negativa de cada verificacion, mas la falta de intencion clara, desemboca en el contacto humano.">
+  <title>Flujo de las tres intenciones: todas las fallas drenan al contacto humano</title>
+  <style>
+    .bg   { fill: #FBFCFD; }
+    .box  { fill: #FFFFFF; stroke: #B4C1C9; stroke-width: 1; }
+    .soft { fill: #E7EDF1; stroke: #B4C1C9; stroke-width: 1; }
+    .rag  { fill: #E2F0F1; stroke: #0E6E7A; stroke-width: 1.2; }
+    .txn  { fill: #F6EDDD; stroke: #9A6212; stroke-width: 1.2; }
+    .dny  { fill: #F7E7E4; stroke: #A03028; stroke-width: 1.2; }
+    .dec  { fill: #FFFFFF; stroke: #4A5A68; stroke-width: 1.1; stroke-dasharray: 4 3; }
+    .t    { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #14202B; }
+    .s    { font-family: Georgia, "Times New Roman", serif; font-size: 11.5px; fill: #4A5A68; }
+    .l    { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 10.5px; fill: #75868F; }
+    .ld   { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 10.5px; fill: #A03028; }
+    .e    { stroke: #8E9CA6; stroke-width: 1.4; fill: none; }
+    .ed   { stroke: #A03028; stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+  </style>
+
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#8E9CA6"/>
+    </marker>
+    <marker id="arD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#A03028"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="900" height="620"/>
+
+  <rect class="box" x="350" y="14" width="200" height="40" rx="3"/>
+  <text class="t" x="450" y="39" text-anchor="middle">Mensaje del usuario</text>
+
+  <line class="e" x1="450" y1="54" x2="450" y2="72" marker-end="url(#ar)"/>
+
+  <rect class="soft" x="290" y="76" width="320" height="40" rx="3"/>
+  <text class="t" x="450" y="101" text-anchor="middle">Redacción de PII · Prompt Shields</text>
+
+  <line class="e" x1="450" y1="116" x2="450" y2="134" marker-end="url(#ar)"/>
+
+  <rect class="soft" x="310" y="138" width="280" height="42" rx="3"/>
+  <text class="t" x="450" y="164" text-anchor="middle">Clasificador + umbral</text>
+
+  <path class="e" d="M 380 180 L 205 208" marker-end="url(#ar)"/>
+  <path class="e" d="M 520 180 L 695 208" marker-end="url(#ar)"/>
+
+  <path class="ed" d="M 450 180 L 450 524" marker-end="url(#arD)"/>
+  <text class="ld" x="450" y="352" text-anchor="middle">sin intención clara</text>
+
+  <rect class="rag" x="40" y="212" width="330" height="32" rx="3"/>
+  <text class="t" x="205" y="233" text-anchor="middle">Consulta de póliza</text>
+
+  <rect class="box" x="40" y="258" width="330" height="38" rx="3"/>
+  <text class="s" x="205" y="282" text-anchor="middle">Recuperación híbrida, filtrada por ACL</text>
+  <line class="e" x1="205" y1="296" x2="205" y2="304" marker-end="url(#ar)"/>
+
+  <rect class="dec" x="40" y="308" width="330" height="38" rx="3"/>
+  <text class="s" x="205" y="332" text-anchor="middle">¿evidencia sobre el umbral?</text>
+  <line class="e" x1="205" y1="346" x2="205" y2="354" marker-end="url(#ar)"/>
+
+  <rect class="box" x="40" y="358" width="330" height="38" rx="3"/>
+  <text class="s" x="205" y="382" text-anchor="middle">Generar con citas obligatorias</text>
+  <line class="e" x1="205" y1="396" x2="205" y2="404" marker-end="url(#ar)"/>
+
+  <rect class="dec" x="40" y="408" width="330" height="38" rx="3"/>
+  <text class="s" x="205" y="432" text-anchor="middle">¿respuesta anclada al contexto?</text>
+  <line class="e" x1="205" y1="446" x2="205" y2="454" marker-end="url(#ar)"/>
+
+  <rect class="rag" x="40" y="458" width="330" height="32" rx="3"/>
+  <text class="t" x="205" y="479" text-anchor="middle">Respuesta con fuentes</text>
+
+  <path class="ed" d="M 40 327 L 22 327 L 22 556 L 52 556" marker-end="url(#arD)"/>
+  <path class="ed" d="M 40 427 L 22 427"/>
+
+  <rect class="txn" x="530" y="212" width="330" height="32" rx="3"/>
+  <text class="t" x="695" y="233" text-anchor="middle">Estado de factura</text>
+
+  <rect class="box" x="530" y="258" width="330" height="38" rx="3"/>
+  <text class="s" x="695" y="282" text-anchor="middle">Extraer folio y periodo</text>
+  <line class="e" x1="695" y1="296" x2="695" y2="304" marker-end="url(#ar)"/>
+
+  <rect class="dec" x="530" y="308" width="330" height="38" rx="3"/>
+  <text class="s" x="695" y="332" text-anchor="middle">¿el usuario puede verla?</text>
+  <line class="e" x1="695" y1="346" x2="695" y2="354" marker-end="url(#ar)"/>
+
+  <rect class="box" x="530" y="358" width="330" height="38" rx="3"/>
+  <text class="s" x="695" y="382" text-anchor="middle">API de facturación, identidad delegada</text>
+  <line class="e" x1="695" y1="396" x2="695" y2="404" marker-end="url(#ar)"/>
+
+  <rect class="dec" x="530" y="408" width="330" height="38" rx="3"/>
+  <text class="s" x="695" y="432" text-anchor="middle">¿respondió con datos?</text>
+  <line class="e" x1="695" y1="446" x2="695" y2="454" marker-end="url(#ar)"/>
+
+  <rect class="txn" x="530" y="458" width="330" height="32" rx="3"/>
+  <text class="t" x="695" y="479" text-anchor="middle">Estado, importe y fecha</text>
+
+  <path class="ed" d="M 860 327 L 878 327 L 878 556 L 848 556" marker-end="url(#arD)"/>
+  <path class="ed" d="M 860 427 L 878 427"/>
+
+  <rect class="dny" x="60" y="530" width="780" height="52" rx="3"/>
+  <text class="t" x="450" y="552" text-anchor="middle">Contacto humano</text>
+  <text class="s" x="450" y="570" text-anchor="middle">resumen del caso · transcripción · ticket · cola de agente</text>
+
+  <text class="l" x="22" y="604">— camino normal</text>
+  <text class="ld" x="190" y="604">- - - rama negativa: siempre al humano</text>
+</svg>

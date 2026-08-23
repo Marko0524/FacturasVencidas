@@ -361,7 +361,21 @@ Igual que en el código Python, la fecha de hoy es un parámetro y no `GETDATE()
 
 ---
 
-## 12. Limitaciones y siguientes pasos
+## 12. Asistente interno de IA
+
+Diseño de arquitectura y flujo en [`docs/asistente-ia.md`](docs/asistente-ia.md), con los diagramas como SVG versionados en [`docs/diagramas/`](docs/diagramas).
+
+**Decisión:** Azure OpenAI con RAG, orquestado desde un backend en Python (FastAPI) con una SPA en React — no Copilot Studio. La razón va más allá del stack: las dos intenciones necesitan *formas de datos distintas*. Las pólizas son documentos y se resuelven con recuperación semántica; el estado de una factura es un dato transaccional, vivo y con permisos por cliente, que se resuelve llamando al sistema de registro. Indexar facturas en un almacén vectorial dejaría el dato desactualizado y convertiría el índice en un canal de fuga entre clientes.
+
+Los tres puntos que sostienen el diseño:
+
+- **El recorte por permisos vive en la recuperación**, no en el prompt. Un fragmento no autorizado no es un candidato descartado: no es candidato.
+- **Toda rama negativa escala al humano.** Sin evidencia, respuesta no anclada, sin permiso, API sin datos o intención dudosa terminan en la misma salida. El fallback es el comportamiento por omisión, no el caso raro.
+- **Las cifras no las escribe el modelo.** Importes, fechas y estatus se insertan por código desde el sistema de registro, con plantilla determinista.
+
+---
+
+## 13. Limitaciones y siguientes pasos
 
 Lo que quedó fuera a propósito por el alcance de la prueba:
 
