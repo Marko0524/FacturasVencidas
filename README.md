@@ -344,7 +344,24 @@ Elegiría **Container Apps Job** si el proceso creciera en dependencias del sist
 
 ---
 
-## 11. Limitaciones y siguientes pasos
+## 11. Consultas SQL
+
+En [`sql/consultas.sql`](sql/consultas.sql), en T-SQL (Azure SQL / SQL Server), validadas ejecutándolas contra SQL Server 2019:
+
+1. **Facturas con más de 10 días de atraso.**
+2. **Saldo vencido y promedio de días de atraso por cliente**, con `JOIN`, `GROUP BY` y `HAVING` sobre un umbral parametrizado.
+
+El archivo incluye un juego de datos de prueba con los casos límite, para que los resultados se puedan reproducir. Tres decisiones que vale la pena señalar:
+
+- **Sólo cuentan las facturas `pending`.** Una factura pagada hace meses sigue teniendo la fecha de vencimiento en el pasado; sin ese filtro aparecería como vencida.
+- **El filtro no envuelve la columna en una función**: `FechaVencimiento < DATEADD(...)` en lugar de `DATEDIFF(...) > 10`. Mismo resultado, pero la segunda forma anula el uso del índice.
+- **El promedio necesita `CAST`.** `DATEDIFF` devuelve entero y `AVG` sobre enteros hace división entera: con los datos de prueba, sin el `CAST` el promedio sale `10` en lugar de `10.75`.
+
+Igual que en el código Python, la fecha de hoy es un parámetro y no `GETDATE()` incrustado en el `WHERE`, así el resultado de cualquier día es reproducible.
+
+---
+
+## 12. Limitaciones y siguientes pasos
 
 Lo que quedó fuera a propósito por el alcance de la prueba:
 
