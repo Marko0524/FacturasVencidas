@@ -11,8 +11,8 @@ Así el documento de Word nunca se desincroniza del repositorio.
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 from docx import Document
@@ -22,6 +22,11 @@ from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor, Inches
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+# Autor de los documentos. Deliberadamente una constante y no `git config
+# user.name`: ahí vive un usuario de GitHub, no un nombre de persona, y este
+# campo lo ve cualquiera que abra las propiedades del archivo en Word.
+AUTOR = "Marco Antonio Rosas Cazares"
 
 # Documentos que se publican también en Word. Los demás viven sólo en markdown.
 DOCUMENTOS = (
@@ -51,16 +56,31 @@ INLINE = re.compile(
 )
 
 
-def git_user_name() -> str:
-    """Autor del documento: el mismo que firma los commits."""
-    try:
-        out = subprocess.run(
-            ["git", "config", "user.name"],
-            cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=10, check=False,
-        )
-        return out.stdout.strip() or "Autor"
-    except (OSError, subprocess.SubprocessError):
-        return "Autor"
+def set_application(ruta: Path, valor: str = "python-docx") -> None:
+    """Corrige el campo Application de docProps/app.xml.
+
+    La plantilla por defecto de python-docx declara 'Microsoft Macintosh Word',
+    que es falso y además incongruente. Se declara la herramienta real, que es
+    coherente con lo que el README ya explica: el markdown es la fuente y el
+    .docx se genera.
+
+    Un .docx es un ZIP y no se puede modificar en sitio, así que se reescribe
+    entrada por entrada conservando el método de compresión de cada una.
+    """
+    with zipfile.ZipFile(ruta) as z:
+        entradas = [(i, z.read(i.filename)) for i in z.infolist()]
+
+    with zipfile.ZipFile(ruta, "w", zipfile.ZIP_DEFLATED) as z:
+        for info, datos in entradas:
+            if info.filename == "docProps/app.xml":
+                texto = datos.decode("utf-8")
+                datos = re.sub(
+                    r"<Application>.*?</Application>",
+                    f"<Application>{valor}</Application>",
+                    texto,
+                    flags=re.S,
+                ).encode("utf-8")
+            z.writestr(info, datos, compress_type=info.compress_type)
 
 
 def _shd(fill: str):
@@ -248,7 +268,8 @@ def build(source: Path) -> Path:
     titulo = next((l.strip()[2:] for l in lines if l.startswith("# ")), source.stem)
 
     doc.core_properties.title = titulo
-    doc.core_properties.author = git_user_name()
+    doc.core_properties.author = AUTOR
+    doc.core_properties.last_modified_by = AUTOR
     doc.core_properties.comments = f"Generado desde {source.name}"
 
     i = 0
@@ -330,6 +351,7 @@ def build(source: Path) -> Path:
         i += 1
 
     doc.save(target)
+    set_application(target)
     return target
 
 
