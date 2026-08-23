@@ -2,6 +2,8 @@
 
 Automatiza el seguimiento de facturas vencidas: consulta las facturas, aplica las reglas de negocio, notifica al cliente y escala a Operaciones cuando el atraso lo amerita — sin duplicar notificaciones si el proceso se vuelve a ejecutar.
 
+**[Ver la demostración en video](https://drive.google.com/file/d/1Kdgq6kyXG3PdCoeUaKBsaVazBfckrMcu/view?usp=sharing)** — la solución en ejecución: reglas de negocio, idempotencia, manejo de errores y el contenedor.
+
 ---
 
 ## 1. Descripción
@@ -400,7 +402,25 @@ Donde Power Automate gana de verdad: humanos en el ciclo (aprobaciones, tarjetas
 
 ---
 
-## 15. Limitaciones y siguientes pasos
+## 15. Demostración en video
+
+**[Ver el video](https://drive.google.com/file/d/1Kdgq6kyXG3PdCoeUaKBsaVazBfckrMcu/view?usp=sharing)** (Google Drive)
+
+Recorrido de la solución en ejecución:
+
+1. **Estructura** — separación por responsabilidad; reglas de negocio como funciones puras.
+2. **Primera corrida** — nueve facturas leídas, una descartada por fecha inválida sin abortar el lote.
+3. **Idempotencia** — el mismo comando el mismo día no envía ni un recordatorio repetido.
+4. **Manejo de errores** — API inalcanzable: reintentos con backoff creciente y código de salida distinto de cero.
+5. **Pruebas** — la suite completa, determinista.
+6. **Docker** — el contenedor corriendo como usuario no privilegiado.
+7. **Configuración por entorno** — bajar el umbral de días sin reconstruir la imagen.
+
+El video no se versiona en el repositorio a propósito: un binario de decenas de megabytes queda en el historial de git para siempre y lo descarga cualquiera que clone, aunque no lo necesite.
+
+---
+
+## 16. Limitaciones y siguientes pasos
 
 Lo que quedó fuera a propósito por el alcance de la prueba:
 
