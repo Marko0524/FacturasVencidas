@@ -379,6 +379,13 @@ Los tres puntos que sostienen el diseño:
 
 Respuestas en [`docs/preguntas-tecnicas.md`](docs/preguntas-tecnicas.md), ancladas en lo que este repositorio implementa: webhook frente a API y polling, idempotencia, ROI de una automatización, consumo de una API REST desde Power Automate y desde Python, gestión de secretos, alucinaciones y fuga de datos, y estrategia de ramas y CI/CD.
 
+También en Word: [`docs/preguntas-tecnicas.docx`](docs/preguntas-tecnicas.docx). **El markdown es la fuente de verdad**; el `.docx` se regenera, no se edita a mano:
+
+```bash
+pip install -r requirements-dev.txt
+python scripts/generar_docx.py
+```
+
 ---
 
 ## 14. Limitaciones y siguientes pasos
