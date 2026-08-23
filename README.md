@@ -6,6 +6,19 @@ Automatiza el seguimiento de facturas vencidas: consulta las facturas, aplica la
 
 **[Ver la demostración en video](https://drive.google.com/file/d/1Kdgq6kyXG3PdCoeUaKBsaVazBfckrMcu/view?usp=sharing)** — la solución en ejecución: reglas de negocio, idempotencia, manejo de errores y el contenedor.
 
+El dominio es común a todos los bloques: **LeaseMD** administra pólizas y factura a clientes, y Cobranza y Operaciones consumen estas automatizaciones. Por eso el job, el asistente y las consultas SQL hablan de las mismas entidades — facturas, atraso, escalamiento a Operaciones — en lugar de ser ejercicios independientes.
+
+### Mapa del entregable
+
+| Bloque | Objetivo | Herramientas | Dónde está |
+|---|---|---|---|
+| **1** · Aterrizaje | Convertir un requerimiento ambiguo en un alcance comprometible | Documentación de ingeniería | §11 · [documento](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx) |
+| **2** · Automatización | Recordatorios de pago y escalamiento a Operaciones | Python, `requests`, pytest, Docker | §1–§10 · `app/`, `main.py`, `tests/` |
+| **3** · Asistente de IA | Responder dudas de pólizas y facturación con gobierno de datos | Azure OpenAI + RAG, FastAPI, React | §13 · [diseño](docs/asistente-ia.md) y [diagramas](docs/diagramas) |
+| **4** · Conceptuales | Siete preguntas técnicas, ancladas en este código | — | §14 · [respuestas](docs/preguntas-tecnicas.md) |
+| **5** · SQL *(bonus)* | Facturas vencidas y saldo por cliente | T-SQL / Azure SQL | §12 · [consultas](sql/consultas.sql) |
+| **6** · Low-code *(bonus)* | Este mismo job en Power Automate frente a Python | — | §15 · [comparación](docs/low-code-vs-codigo.md) |
+
 ---
 
 ## 1. Descripción
@@ -350,7 +363,26 @@ Elegiría **Container Apps Job** si el proceso creciera en dependencias del sist
 
 ---
 
-## 11. Consultas SQL
+## 11. Aterrizaje del requerimiento
+
+El punto de partida del ejercicio, en [`docs/Bloque 1 - Aterrizaje de Requerimiento.docx`](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx).
+
+El escenario original era deliberadamente ambiguo: *«que el sistema avise cuando algo esté por vencerse y que se resuelva solo»*. El documento no lo interpreta y sigue adelante, sino que separa lo que el escenario **establece** de lo que **no**, y convierte cada hueco en una pregunta con dueño.
+
+Lo que contiene:
+
+- **Preguntas de clarificación** en cinco grupos —qué se vence, qué significa «resolverse solo», usuarios y canales, datos y sistemas, éxito y negocio— distinguiendo las **bloqueantes** de las que no lo son.
+- **Registro de hipótesis** con responsable de validación e impacto si resulta falsa.
+- **Alcance dentro y fuera del MVP**, cada exclusión con su motivo y si vuelve en una fase posterior.
+- **Niveles de autonomía**, que es la forma de aterrizar «resolverse solo» sin prometer magia: del aviso al humano hasta la acción automática reversible.
+- **Estimación por t-shirt sizing** por componente, con los factores que pueden mover la talla.
+- **Riesgos y dependencias externas**, con mitigación, disparador y responsable.
+- **Criterios de aceptación** en formato Dado/Cuando/Entonces, **incluyendo escenarios negativos**: qué debe pasar cuando la fuente no responde, cuando un caso ya fue avisado, cuando hay una prórroga vigente.
+- **Tres métricas de éxito** con línea base y momento de medición: fuga de vencimientos, esfuerzo percibido del usuario y desviación de alcance y tiempo.
+
+---
+
+## 12. Consultas SQL
 
 En [`sql/consultas.sql`](sql/consultas.sql), en T-SQL (Azure SQL / SQL Server), validadas ejecutándolas contra SQL Server 2019:
 
@@ -367,7 +399,7 @@ Igual que en el código Python, la fecha de hoy es un parámetro y no `GETDATE()
 
 ---
 
-## 12. Asistente interno de IA
+## 13. Asistente interno de IA
 
 Diseño de arquitectura y flujo en [`docs/asistente-ia.md`](docs/asistente-ia.md), con los diagramas como SVG versionados en [`docs/diagramas/`](docs/diagramas).
 
@@ -381,7 +413,7 @@ Los tres puntos que sostienen el diseño:
 
 ---
 
-## 13. Preguntas técnicas conceptuales
+## 14. Preguntas técnicas conceptuales
 
 Respuestas en [`docs/preguntas-tecnicas.md`](docs/preguntas-tecnicas.md), ancladas en lo que este repositorio implementa: webhook frente a API y polling, idempotencia, ROI de una automatización, consumo de una API REST desde Power Automate y desde Python, gestión de secretos, alucinaciones y fuga de datos, y estrategia de ramas y CI/CD.
 
@@ -394,7 +426,7 @@ python scripts/generar_docx.py
 
 ---
 
-## 14. Power Automate frente a Python
+## 15. Power Automate frente a Python
 
 Comparación de este mismo job hecho en *low-code* contra código, en [`docs/low-code-vs-codigo.md`](docs/low-code-vs-codigo.md) y en Word en [`docs/low-code-vs-codigo.docx`](docs/low-code-vs-codigo.docx).
 
@@ -406,7 +438,7 @@ Donde Power Automate gana de verdad: humanos en el ciclo (aprobaciones, tarjetas
 
 ---
 
-## 15. Demostración en video
+## 16. Demostración en video
 
 **[Ver el video](https://drive.google.com/file/d/1Kdgq6kyXG3PdCoeUaKBsaVazBfckrMcu/view?usp=sharing)** (Google Drive)
 
@@ -424,7 +456,7 @@ El video no se versiona en el repositorio a propósito: un binario de decenas de
 
 ---
 
-## 16. Limitaciones y siguientes pasos
+## 17. Limitaciones y siguientes pasos
 
 Lo que quedó fuera a propósito por el alcance de la prueba:
 

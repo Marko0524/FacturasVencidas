@@ -1,6 +1,8 @@
 # Asistente interno de pólizas y facturación
 
-Diseño de arquitectura y flujo para un asistente que responde dudas frecuentes de pólizas y estado de facturas, con el control de acceso como parte del camino de datos y no como una capa encima.
+Diseño de arquitectura y flujo para un asistente interno de **LeaseMD** que responde dudas frecuentes de pólizas y estado de facturas, con el control de acceso como parte del camino de datos y no como una capa encima.
+
+Comparte dominio con el job de recordatorios de este mismo repositorio: las mismas facturas, el mismo criterio de atraso y el mismo escalamiento a Operaciones. Donde el job **actúa** sin que nadie lo mire, el asistente **responde** a una persona que pregunta — y esa diferencia es la que justifica casi todas las decisiones de abajo.
 
 ---
 
