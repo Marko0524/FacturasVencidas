@@ -4,7 +4,7 @@ Automatiza el seguimiento de facturas vencidas: consulta las facturas, aplica la
 
 **[Documento de aterrizaje del requerimiento](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx)** — el alcance acordado, los supuestos y las preguntas de las que salen las reglas de abajo.
 
-**[Ver la demostración en video](https://drive.google.com/file/d/1Kdgq6kyXG3PdCoeUaKBsaVazBfckrMcu/view?usp=sharing)** — la solución en ejecución: reglas de negocio, idempotencia, manejo de errores y el contenedor.
+**[Ver la demostración en video](https://drive.google.com/file/d/1H_lIz7a0iXisAuRdzHDJFYBie3V7Glyq/view?usp=sharing)** — la solución en ejecución: reglas de negocio, idempotencia, manejo de errores y el contenedor.
 
 El dominio es común a todos los bloques: **LeaseMD** administra pólizas y factura a clientes, y Cobranza y Operaciones consumen estas automatizaciones. Por eso el job, el asistente y las consultas SQL hablan de las mismas entidades — facturas, atraso, escalamiento a Operaciones — en lugar de ser ejercicios independientes.
 
@@ -627,7 +627,7 @@ Donde Power Automate gana de verdad: humanos en el ciclo (aprobaciones, tarjetas
 
 ## 16. Demostración en video
 
-**[Ver el video](https://drive.google.com/file/d/1Kdgq6kyXG3PdCoeUaKBsaVazBfckrMcu/view?usp=sharing)** (Google Drive)
+**[Ver el video](https://drive.google.com/file/d/1H_lIz7a0iXisAuRdzHDJFYBie3V7Glyq/view?usp=sharing)** (Google Drive)
 
 Recorrido de la solución en ejecución:
 
