@@ -4,7 +4,7 @@ Automatiza el seguimiento de facturas vencidas: consulta las facturas, aplica la
 
 **[Documento de aterrizaje del requerimiento](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx)** — el alcance acordado, los supuestos y las preguntas de las que salen las reglas de abajo.
 
-**[Ver la demostración en video](https://drive.google.com/file/d/1H_lIz7a0iXisAuRdzHDJFYBie3V7Glyq/view?usp=sharing)** — la solución en ejecución: reglas de negocio, idempotencia, manejo de errores y el contenedor.
+**[Ver la demostración en video](https://drive.google.com/file/d/1H_lIz7a0iXisAuRdzHDJFYBie3V7Glyq/view?usp=sharing)** — la solución en ejecución: reglas de negocio, envío real de correo, idempotencia, manejo de errores y el contenedor.
 
 El dominio es común a todos los bloques: **LeaseMD** administra pólizas y factura a clientes, y Cobranza y Operaciones consumen estas automatizaciones. Por eso el job, el asistente y las consultas SQL hablan de las mismas entidades — facturas, atraso, escalamiento a Operaciones — en lugar de ser ejercicios independientes.
 
@@ -633,11 +633,12 @@ Recorrido de la solución en ejecución:
 
 1. **Estructura** — separación por responsabilidad; reglas de negocio como funciones puras.
 2. **Primera corrida** — nueve facturas leídas, una descartada por fecha inválida sin abortar el lote.
-3. **Idempotencia** — el mismo comando el mismo día no envía ni un recordatorio repetido.
-4. **Manejo de errores** — API inalcanzable: reintentos con backoff creciente y código de salida distinto de cero.
-5. **Pruebas** — la suite completa, determinista.
-6. **Docker** — el contenedor corriendo como usuario no privilegiado.
-7. **Configuración por entorno** — bajar el umbral de días sin reconstruir la imagen.
+3. **Envío de correo real** — los recordatorios y las alertas llegando a una bandeja, con el contenido que ve el destinatario ([§9.1](#91-envío-real-por-smtp)).
+4. **Idempotencia** — el mismo comando el mismo día no envía ni un recordatorio repetido.
+5. **Manejo de errores** — API inalcanzable: reintentos con backoff creciente y código de salida distinto de cero.
+6. **Pruebas** — la suite completa, determinista.
+7. **Docker** — el contenedor corriendo como usuario no privilegiado.
+8. **Configuración por entorno** — bajar el umbral de días sin reconstruir la imagen.
 
 El video no se versiona en el repositorio a propósito: un binario de decenas de megabytes queda en el historial de git para siempre y lo descarga cualquiera que clone, aunque no lo necesite.
 
