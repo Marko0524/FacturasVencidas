@@ -35,7 +35,7 @@ Esta aplicación resuelve ese ciclo como un **job desatendido**:
 | Más de 10 días de atraso | Recordatorio al cliente **+ alerta a Operaciones** |
 | Registro con datos inválidos | Se descarta con `WARNING`, el resto continúa |
 
-El umbral de 10 días es configurable (`OVERDUE_ALERT_THRESHOLD_DAYS`). El envío de correo se **simula con `logging`**; no se conecta a ningún proveedor real.
+El umbral de 10 días es configurable (`OVERDUE_ALERT_THRESHOLD_DAYS`). El envío de correo tiene **dos canales intercambiables** (`NOTIFICATION_CHANNEL`): `log` simula la entrega con líneas de log —default, sin red— y `smtp` **envía correo real**. Contra [Mailpit](https://mailpit.axllent.org/) los mensajes llegan a una bandeja local y se pueden abrir uno por uno; contra Gmail, Microsoft 365 o SendGrid llegan al cliente. Los dos casos están ejecutados y comparados en la [§9.1](#91-envío-real-por-smtp).
 
 De dónde salen estas reglas, qué se dio por supuesto y qué quedó fuera del alcance: [`Bloque 1 - Aterrizaje de Requerimiento.docx`](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx).
 
@@ -52,7 +52,7 @@ API REST  /  JSON local
           ↓
     idempotency.py         ¿esta notificación ya se envió hoy?   ← aquí interviene
           ↓
-      notifier.py          simulación de envío
+      notifier.py          entrega: log simulado  o  SMTP real
           ↓
    Cliente  /  Operaciones
 ```
@@ -65,7 +65,7 @@ Responsabilidades:
 | `app/api_client.py` | Obtiene los registros crudos (API o archivo), reintentos y backoff | Red / disco |
 | `app/invoice_service.py` | Valida registros y decide qué notificar | **Ninguno — funciones puras** |
 | `app/idempotency.py` | Estado de notificaciones ya enviadas | Disco (escritura atómica) |
-| `app/notifier.py` | Entrega de notificaciones | Log |
+| `app/notifier.py` | Entrega de notificaciones | Log **o** SMTP |
 | `main.py` | Orquestación, contadores y código de salida | Log |
 
 **Dónde interviene la idempotencia:** entre la decisión y el envío. `invoice_service` decide *qué* debería enviarse; `idempotency` decide *si realmente hace falta enviarlo*. Por eso la garantía cubre la **acción**, no la lectura de la API: releer las facturas mil veces es inofensivo, enviar el mismo correo mil veces no.
@@ -89,10 +89,18 @@ Todo se lee de variables de entorno. **No hay ningún secreto en el código ni e
 | `SAMPLE_DATA_PATH` | `./sample_data/invoices.json` | Dataset local |
 | `LOG_LEVEL` | `INFO` | Nivel de logging |
 | `DRY_RUN` | `false` | `true` simula todo pero **no persiste** el estado |
+| `NOTIFICATION_CHANNEL` | `log` | `log` simula el envío; `smtp` **envía correo real** |
+| `SMTP_HOST` | `localhost` | Servidor SMTP (Mailpit en local) |
+| `SMTP_PORT` | `1025` | Puerto SMTP (Mailpit escucha en 1025) |
+| `SMTP_USERNAME` | *(vacío)* | Vacío → no se autentica. Mailpit no lo necesita |
+| `SMTP_PASSWORD` | *(vacío)* | En producción viene de Key Vault, nunca de un archivo |
+| `SMTP_USE_TLS` | `false` | `true` emite `STARTTLS` antes de enviar |
+| `EMAIL_FROM` | `cobranza@empresa.com` | Remitente |
+| `EMAIL_FROM_NAME` | `Cobranza Empresa` | Nombre visible del remitente |
 
 Las rutas relativas se resuelven contra la raíz del proyecto, así que la app funciona desde cualquier directorio de trabajo.
 
-Plantilla: `.env.example`. **Los defaults bastan para ejecutar sin `.env` y sin red.**
+Plantilla: `.env.example`. **Los defaults bastan para ejecutar sin `.env` y sin red.** Si existe un `.env` en la raíz se carga al arrancar, así que un secreto puede vivir en un archivo ignorado por Git en lugar de quedarse en el historial del shell. **El entorno real siempre gana**: un `SMTP_HOST=... python main.py` explícito pisa lo que diga el archivo.
 
 ---
 
@@ -128,6 +136,69 @@ DRY_RUN=true python main.py       # Linux / macOS
 $env:DRY_RUN="true"; python main.py   # PowerShell
 ```
 
+### 4.1 Envío real de correo con Mailpit
+
+Con `NOTIFICATION_CHANNEL=smtp` el proceso deja de simular: construye un mensaje MIME por notificación y lo entrega por SMTP. **Mailpit** es el servidor de pruebas que hace real el caso sin riesgo: acepta todos los mensajes, no reenvía nada a internet y los muestra en una bandeja web.
+
+**1. Levantar Mailpit** (SMTP en `1025`, bandeja web en `8025`):
+
+```bash
+# Docker
+docker run --rm -p 1025:1025 -p 8025:8025 axllent/mailpit
+
+# Binario en Windows, sin instalar nada
+Invoke-WebRequest https://github.com/axllent/mailpit/releases/latest/download/mailpit-windows-amd64.zip -OutFile mailpit.zip
+Expand-Archive mailpit.zip -DestinationPath mailpit -Force
+.\mailpit\mailpit.exe
+```
+
+**2. Ejecutar el proceso contra Mailpit:**
+
+```powershell
+$env:NOTIFICATION_CHANNEL="smtp"; $env:SMTP_HOST="localhost"; $env:SMTP_PORT="1025"
+python main.py
+```
+
+```bash
+NOTIFICATION_CHANNEL=smtp SMTP_HOST=localhost SMTP_PORT=1025 python main.py   # Linux / macOS
+```
+
+**3. Abrir la bandeja:** <http://localhost:8025>. Cada recordatorio aparece dirigido al correo del cliente y cada alerta a `OPERATIONS_EMAIL`.
+
+Notas de diseño:
+
+- **La idempotencia también aplica al correo real.** La segunda ejecución del mismo día no vuelve a enviar nada: la bandeja se queda igual y el log reporta `skipped`. Es exactamente la garantía de la [§7](#idempotencia), ahora verificable en una bandeja.
+- **Un buzón caído no aborta el lote.** Cualquier fallo SMTP se convierte en `NotificationError`, se cuenta en `errors` y el proceso sigue con la siguiente factura. El estado de idempotencia **no** se marca, así que la próxima ejecución reintenta.
+- **Una conexión por mensaje.** El lote son unas cuantas facturas por corrida; una conexión de vida corta no puede quedar obsoleta entre dos envíos lentos.
+- **Producción es la misma clase, otro entorno.** `SMTP_HOST`, `SMTP_USERNAME` y `SMTP_USE_TLS` apuntando a Microsoft 365, SendGrid o Azure Communication Services envían al cliente real sin tocar una línea de código.
+
+### 4.2 Entrega real a internet
+
+Mailpit valida el mensaje, no la entrega: intercepta todo y no reenvía. Para que los correos salgan de verdad hace falta un **relay autenticado**, porque la entrega directa al MX del destinatario (puerto 25) está bloqueada en cualquier red corporativa. Pon las credenciales en `.env` — está en `.gitignore`, así no acaban en el historial del shell ni en el repositorio:
+
+```ini
+NOTIFICATION_CHANNEL=smtp
+SMTP_HOST=smtp.office365.com     # o smtp.gmail.com / smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USE_TLS=true
+SMTP_USERNAME=cuenta@dominio.com
+SMTP_PASSWORD=                   # app password o API key, nunca la contraseña normal
+EMAIL_FROM=cuenta@dominio.com    # debe coincidir con la cuenta autenticada, o el proveedor rechaza el envío
+```
+
+```bash
+python main.py
+```
+
+Dos cosas que muerden en producción y no en Mailpit:
+
+- **`EMAIL_FROM` tiene que pertenecer a un dominio autorizado.** Un remitente arbitrario se rechaza en el `MAIL FROM` o llega marcado como spam.
+- **SPF, DKIM y DMARC son del dominio, no de la aplicación.** Sin ellos la entregabilidad depende de la suerte, por muy correcto que sea el mensaje.
+
+**Verificado contra Gmail** el 2026-08-28: `smtp.gmail.com:587` con STARTTLS y una contraseña de aplicación. Salieron 3 correos, quedaron registrados en *Enviados* de la cuenta y **no hubo ni un rebote**, así que los servidores de destino los aceptaron. La segunda corrida inmediata reportó `skipped=3` y no envió nada: la idempotencia se sostiene igual contra un proveedor real que contra Mailpit.
+
+Gmail exige contraseña de aplicación; la contraseña normal de la cuenta se rechaza con `534 5.7.9 Application-specific password required`. Y `EMAIL_FROM` debe ser la cuenta autenticada: Gmail reescribe o rechaza cualquier otro remitente.
+
 ---
 
 ## 5. Docker
@@ -151,6 +222,16 @@ run 1 -> fetched=9 invalid=1 overdue=5 reminders=5 alerts=2 skipped=0 errors=0
 run 2 -> fetched=9 invalid=1 overdue=5 reminders=5 alerts=2 skipped=0 errors=0   <- reenvía todo
 ```
 
+**Enviando correo real desde el contenedor:** `localhost` dentro del contenedor no es el host, así que Mailpit hay que alcanzarlo por su nombre de red.
+
+```bash
+docker run --env-file .env -v "$(pwd)/state:/app/state" \
+  -e NOTIFICATION_CHANNEL=smtp -e SMTP_HOST=host.docker.internal \
+  invoice-reminder
+```
+
+En Linux añade `--add-host=host.docker.internal:host-gateway`, o pon ambos contenedores en la misma red de Docker y usa `-e SMTP_HOST=mailpit`.
+
 La imagen corre como usuario `appuser` (uid 1001), no como root, y no contiene `.env`, `tests/` ni `scripts/`:
 
 ```console
@@ -168,13 +249,15 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-50 pruebas, todas deterministas: `today` se inyecta siempre, no hay llamadas de red y no se duerme de verdad (`sleep` es inyectable).
+71 pruebas, todas deterministas: `today` se inyecta siempre, no hay llamadas de red ni sockets SMTP y no se duerme de verdad (`sleep` es inyectable).
 
 | Archivo | Cubre |
 |---|---|
 | `test_invoice_service.py` | Reglas de negocio, bordes 10/11 días, estados, parseo y registros corruptos |
 | `test_idempotency.py` | Store, escritura atómica, archivo corrupto, `DRY_RUN`, y **segunda ejecución completa → 0 notificaciones** |
 | `test_api_client.py` | Qué se reintenta y qué no, `Retry-After`, crecimiento del backoff, cabecera Bearer, fuente de archivo |
+| `test_notifier.py` | Destinatarios y contenido del correo, TLS y credenciales solo si están configuradas, fallos SMTP → `NotificationError`, elección del canal |
+| `test_config.py` | Carga del `.env`: precedencia del entorno real, comentarios, comillas, contraseñas con `=`, archivo ausente |
 
 ---
 
@@ -263,7 +346,7 @@ Ejecución real, dataset del repositorio, fecha de referencia 2026-08-21.
 **Primera ejecución:**
 
 ```text
-2026-08-21 17:35:32 INFO     Process started source=file run_date=2026-08-21 threshold_days=10 dry_run=False
+2026-08-21 17:35:32 INFO     Process started source=file run_date=2026-08-21 threshold_days=10 channel=log dry_run=False
 2026-08-21 17:35:32 INFO     Reading invoices from local file path=...\sample_data\invoices.json
 2026-08-21 17:35:32 INFO     Invoices fetched count=9
 2026-08-21 17:35:32 WARNING  Invoice discarded invoice=INV-9999 reason=invalid_due_date
@@ -286,7 +369,7 @@ Ejecución real, dataset del repositorio, fecha de referencia 2026-08-21.
 **Segunda ejecución, inmediatamente después — la idempotencia en acción:**
 
 ```text
-2026-08-21 17:35:36 INFO     Process started source=file run_date=2026-08-21 threshold_days=10 dry_run=False
+2026-08-21 17:35:36 INFO     Process started source=file run_date=2026-08-21 threshold_days=10 channel=log dry_run=False
 2026-08-21 17:35:36 INFO     Invoices fetched count=9
 2026-08-21 17:35:36 WARNING  Invoice discarded invoice=INV-9999 reason=invalid_due_date
 2026-08-21 17:35:36 INFO     Notification state loaded path=...\state\notifications.json entries=7
@@ -300,6 +383,108 @@ Ejecución real, dataset del repositorio, fecha de referencia 2026-08-21.
 
 Mismas 5 facturas vencidas, **0 notificaciones enviadas, 7 omitidas**.
 
+### 9.1 Envío real por SMTP
+
+Misma ejecución con `NOTIFICATION_CHANNEL=smtp`, fecha de referencia 2026-08-28, contra los dos servidores. Dos facturas del dataset apuntan a buzones temporales reales, y `OPERATIONS_EMAIL` a un tercero, para poder leer el correo como lo lee el destinatario.
+
+```text
+2026-08-28 13:59:24 INFO     Process started source=file run_date=2026-08-28 threshold_days=10 channel=smtp dry_run=False
+2026-08-28 13:59:24 INFO     Invoices fetched count=9
+2026-08-28 13:59:24 WARNING  Invoice discarded invoice=INV-9999 reason=invalid_due_date
+2026-08-28 13:59:25 INFO     Email sent via=smtp to=cliente@empresa.com invoice=INV-1003 type=reminder subject='Recordatorio de pago - Factura INV-1003'
+2026-08-28 13:59:26 INFO     Email sent via=smtp to=finanzas@meridiano.mx invoice=INV-1004 type=reminder subject='Recordatorio de pago - Factura INV-1004'
+2026-08-28 13:59:27 INFO     Email sent via=smtp to=tesoreria@textilesbajio.mx invoice=INV-1005 type=reminder subject='Recordatorio de pago - Factura INV-1005'
+2026-08-28 13:59:28 INFO     Email sent via=smtp to=o5n3it82yy@lnovic.com invoice=INV-1005 type=operations_alert subject='[ALERTA] Factura INV-1005 con 15 dias de atraso'
+2026-08-28 13:59:29 INFO     Email sent via=smtp to=kayelo3614@neowd.com invoice=INV-1006 type=reminder subject='Recordatorio de pago - Factura INV-1006'
+2026-08-28 13:59:30 INFO     Email sent via=smtp to=kayelo3614@neowd.com invoice=INV-1007 type=reminder subject='Recordatorio de pago - Factura INV-1007'
+2026-08-28 13:59:31 INFO     Email sent via=smtp to=o5n3it82yy@lnovic.com invoice=INV-1007 type=operations_alert subject='[ALERTA] Factura INV-1007 con 25 dias de atraso'
+2026-08-28 13:59:31 INFO     Process finished fetched=9 invalid=1 overdue=5 reminders=5 alerts=2 skipped=0 errors=0
+```
+
+7 mensajes: 5 recordatorios a los clientes y 2 alertas a Operaciones. `INV-1004`, con exactamente 10 días de atraso, recibe recordatorio y **ninguna** alerta — el borde del umbral, verificable en la bandeja.
+
+**Idempotencia sobre correo real.** Segunda ejecución inmediata: `skipped=7`, cero envíos, la bandeja intacta en 7 mensajes. Ni un duplicado.
+
+**Fallo de entrega.** Apuntando a un puerto SMTP muerto, cada envío falla, se cuenta y el lote continúa:
+
+```text
+app.notifier.NotificationError: smtp_delivery_failed invoice=INV-1003 type=reminder: [WinError 10061] ...
+Process finished fetched=9 invalid=1 overdue=5 reminders=0 alerts=0 skipped=0 errors=7
+exit code = 1
+```
+
+El estado **no** se escribió, así que la siguiente ejecución reintenta. Es la contraparte del *at-least-once* de la [§7](#idempotencia).
+
+#### Los dos canales prueban cosas distintas
+
+La misma corrida por Mailpit y por Gmail no da el mismo resultado, y ahí está el motivo de que el canal sea configurable:
+
+| | Mailpit | Gmail |
+|---|---|---|
+| Los 7 mensajes | Enviados | Enviados |
+| `cliente@empresa.com` | Visible en la bandeja | **Rebotó** — el buzón no existe |
+| `tesoreria@textilesbajio.mx` | Visible en la bandeja | **Rebotó** — el buzón no existe |
+| Duración | ~7 s | ~24 s (TLS y login por mensaje) |
+
+**Mailpit valida el mensaje**: que se construye bien, que va a quien debe y que el HTML se ve. **Gmail valida la entrega**: que un servidor real lo acepta y que el buzón destino existe. Ninguno sustituye al otro.
+
+Al alternar entre ambos no basta con cambiar `SMTP_HOST`: Mailpit no ofrece STARTTLS, así que hay que bajar también `SMTP_USE_TLS` y vaciar usuario y contraseña, o el login falla con `STARTTLS extension not supported by server`.
+
+#### El contenido
+
+Los correos son `multipart/alternative`: parte HTML con el diseño y parte de texto plano **completa**, no un resto degradado, para quien no renderiza HTML o lo tiene desactivado. El texto va primero en el árbol MIME, que es el orden que hace que un cliente sin HTML encuentre la versión legible.
+
+Recordatorio al cliente (`INV-1007`, 25 días de atraso), parte de texto:
+
+```text
+Asunto: Recordatorio de pago - Factura INV-1007
+De:     Cobranza Empresa <cobranza@empresa.com>
+Para:   kayelo3614@neowd.com
+
+Apreciable Logistica Pacifico:
+
+Por este medio le informamos, de manera atenta, que a la fecha se encuentra
+pendiente de pago la factura INV-1007, con vencimiento el 3 de agosto de 2026.
+
+    Factura                INV-1007
+    Importe                $98,500.00 MXN
+    Fecha de vencimiento   3 de agosto de 2026
+    Días transcurridos     25 días
+
+Le agradeceremos cubrir el importe correspondiente a la brevedad. En caso de
+que el pago ya se hubiera realizado, le pedimos hacer caso omiso del presente
+aviso o bien compartirnos el comprobante para actualizar el estado de su cuenta.
+
+Quedamos a sus órdenes para cualquier aclaración.
+
+Atentamente,
+Departamento de Cobranza
+Cobranza Empresa
+```
+
+Alerta a Operaciones del mismo caso, que además lleva el contacto del cliente:
+
+```text
+Asunto: [ALERTA] Factura INV-1007 con 25 dias de atraso
+Para:   o5n3it82yy@lnovic.com
+
+ALERTA DE CARTERA VENCIDA
+
+La factura INV-1007 rebasó el umbral de atraso definido para el
+escalamiento a Operaciones y requiere seguimiento.
+
+    Factura                INV-1007
+    Cliente                Logistica Pacifico
+    Contacto               kayelo3614@neowd.com
+    Importe                $98,500.00 MXN
+    Fecha de vencimiento   3 de agosto de 2026
+    Días de atraso         25 días
+
+El recordatorio de pago correspondiente ya fue enviado al cliente.
+```
+
+La parte HTML está escrita para clientes de correo, no para navegadores: tablas en lugar de flexbox, estilos en línea porque Outlook descarta los bloques `<style>` y Gmail elimina el `<head>`, colores declarados explícitamente para que un cliente en modo oscuro no invierta medio mensaje, y **cero recursos externos** — una imagen remota se bloquea por defecto y de paso filtra un acuse de lectura. Los nombres de cliente vienen de la API, así que van escapados: una prueba inyecta `<script>` en el nombre y verifica que sale neutralizado.
+
 ### El dataset
 
 9 facturas que cubren todas las ramas de decisión:
@@ -311,10 +496,12 @@ Mismas 5 facturas vencidas, **0 notificaciones enviadas, 7 omitidas**.
 | INV-1003 | `pending` | 5 días | Recordatorio |
 | INV-1004 | `pending` | **10 días (borde)** | Recordatorio, **sin** alerta |
 | INV-1005 | `pending` | 15 días | Recordatorio + alerta |
-| INV-1006 | `pending` | 3 días | Recordatorio |
-| INV-1007 | `pending` | 25 días | Recordatorio + alerta |
+| INV-1006 | `pending` | 3 días | Recordatorio → **buzón real** |
+| INV-1007 | `pending` | 25 días | Recordatorio + alerta → **buzones reales** |
 | INV-1008 | `cancelled` | 40 días | Ninguna acción |
 | INV-9999 | `pending` | fecha inválida | Descartada con `WARNING` |
+
+`INV-1006` e `INV-1007` apuntan a buzones temporales reales, y `OPERATIONS_EMAIL` en `.env.example` a un tercero: así el envío real ([§9.1](#91-envío-real-por-smtp)) se puede leer como lo lee el destinatario. El dataset se regenera con `scripts/refresh_sample_data.py`, que es donde viven esas direcciones — editarlas ahí es lo que hace que sobrevivan a un refresco.
 
 ---
 
@@ -461,7 +648,9 @@ El video no se versiona en el repositorio a propósito: un binario de decenas de
 Lo que quedó fuera a propósito por el alcance de la prueba:
 
 - **El archivo de estado crece sin límite.** No hay purga de claves antiguas. En producción se resuelve con TTL (Cosmos DB, Redis) o con un job de limpieza.
-- **El envío es simulado.** No hay reintentos ni cola de mensajes fallidos; con un proveedor real haría falta una dead-letter queue.
+- **El envío SMTP no reintenta dentro de la corrida.** Un fallo se cuenta y queda para la ejecución siguiente, que reintenta porque el estado no se marcó. Con un proveedor real haría falta una dead-letter queue y backoff por mensaje, como el que ya tiene el cliente de API.
+- **Los rebotes no se procesan.** El SMTP del proveedor acepta el mensaje y el job lo da por enviado; si el buzón destino no existe, el rebote llega después, por correo, fuera del alcance del proceso. Se comprobó enviando por Gmail a dos direcciones inexistentes del dataset: `errors=0` y las notificaciones marcadas como procesadas, con los rebotes en la bandeja del remitente. Un sistema de cobranza real consumiría esos avisos para marcar la dirección como inválida y dejar de reintentar.
+- **Sin adjuntos.** Los correos no llevan el PDF de la factura; es un añadido directo sobre `SmtpNotifier`.
 - **Sin concurrencia.** Dos instancias simultáneas pueden duplicar notificaciones, porque el archivo local no da exclusión mutua. Un store real con escritura condicional (ETag en Table Storage, `SETNX` en Redis) lo resuelve.
 - **`Retry-After` solo en formato de segundos**; la variante con fecha HTTP cae al backoff normal.
 - **Sin paginación** en el cliente de API, conforme al contrato definido.
