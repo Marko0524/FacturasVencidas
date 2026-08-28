@@ -68,7 +68,8 @@ TEMPLATES: list[dict] = [
     {
         "id": "INV-1006",
         "customer_name": "Servicios Integrales Lopez",
-        "customer_email": "admin@silopez.mx",
+        # Buzón temporal real, para ver el recordatorio como lo recibe un cliente.
+        "customer_email": "kayelo3614@neowd.com",
         "amount": 3120.30,
         "currency": "MXN",
         "status": "pending",
@@ -77,7 +78,8 @@ TEMPLATES: list[dict] = [
     {
         "id": "INV-1007",
         "customer_name": "Logistica Pacifico",
-        "customer_email": "pagos@logpacifico.mx",
+        # Buzón temporal real: esta factura dispara recordatorio Y alerta.
+        "customer_email": "kayelo3614@neowd.com",
         "amount": 98500.00,
         "currency": "MXN",
         "status": "pending",

@@ -6,7 +6,7 @@
       "customer_email": "pagos@aurora.mx",
       "amount": 8200.0,
       "currency": "MXN",
-      "due_date": "2026-08-01",
+      "due_date": "2026-08-08",
       "status": "paid"
     },
     {
@@ -15,7 +15,7 @@
       "customer_email": "cuentas@delnorte.mx",
       "amount": 23400.75,
       "currency": "MXN",
-      "due_date": "2026-08-28",
+      "due_date": "2026-09-04",
       "status": "pending"
     },
     {
@@ -24,7 +24,7 @@
       "customer_email": "cliente@empresa.com",
       "amount": 15000.5,
       "currency": "MXN",
-      "due_date": "2026-08-16",
+      "due_date": "2026-08-23",
       "status": "pending"
     },
     {
@@ -33,7 +33,7 @@
       "customer_email": "finanzas@meridiano.mx",
       "amount": 4780.0,
       "currency": "MXN",
-      "due_date": "2026-08-11",
+      "due_date": "2026-08-18",
       "status": "pending"
     },
     {
@@ -42,25 +42,25 @@
       "customer_email": "tesoreria@textilesbajio.mx",
       "amount": 61250.0,
       "currency": "MXN",
-      "due_date": "2026-08-06",
+      "due_date": "2026-08-13",
       "status": "pending"
     },
     {
       "id": "INV-1006",
       "customer_name": "Servicios Integrales Lopez",
-      "customer_email": "admin@silopez.mx",
+      "customer_email": "kayelo3614@neowd.com",
       "amount": 3120.3,
       "currency": "MXN",
-      "due_date": "2026-08-18",
+      "due_date": "2026-08-25",
       "status": "pending"
     },
     {
       "id": "INV-1007",
       "customer_name": "Logistica Pacifico",
-      "customer_email": "pagos@logpacifico.mx",
+      "customer_email": "kayelo3614@neowd.com",
       "amount": 98500.0,
       "currency": "MXN",
-      "due_date": "2026-07-27",
+      "due_date": "2026-08-03",
       "status": "pending"
     },
     {
@@ -69,7 +69,7 @@
       "customer_email": "contabilidad@zenit.mx",
       "amount": 17300.0,
       "currency": "MXN",
-      "due_date": "2026-07-12",
+      "due_date": "2026-07-19",
       "status": "cancelled"
     },
     {
