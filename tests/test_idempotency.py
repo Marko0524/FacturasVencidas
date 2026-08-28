@@ -39,6 +39,14 @@ def make_config(tmp_path: Path, invoices: list[dict], dry_run: bool = False) -> 
         sample_data_path=sample_path,
         log_level="INFO",
         dry_run=dry_run,
+        notification_channel="log",
+        smtp_host="localhost",
+        smtp_port=1025,
+        smtp_username="",
+        smtp_password="",
+        smtp_use_tls=False,
+        email_from="cobranza@empresa.com",
+        email_from_name="Cobranza Empresa",
     )
 
 

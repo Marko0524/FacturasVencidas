@@ -18,7 +18,7 @@ from app.invoice_service import (
     evaluate_invoice,
     parse_invoices,
 )
-from app.notifier import LoggingNotifier
+from app.notifier import LoggingNotifier, SmtpNotifier
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,28 @@ class RunSummary:
         )
 
 
+def build_notifier(config: Config) -> Any:
+    """Pick the delivery channel declared by the configuration.
+
+    ``log`` keeps the process side-effect free; ``smtp`` sends real mail, which
+    against Mailpit lands in a local inbox and against Microsoft 365 / SendGrid
+    lands in the customer's.
+    """
+    if config.sends_real_email:
+        return SmtpNotifier(
+            host=config.smtp_host,
+            port=config.smtp_port,
+            username=config.smtp_username,
+            password=config.smtp_password,
+            use_tls=config.smtp_use_tls,
+            sender_email=config.email_from,
+            sender_name=config.email_from_name,
+            operations_email=config.operations_email,
+            timeout=config.request_timeout,
+        )
+    return LoggingNotifier(config.operations_email)
+
+
 def run(config: Config, today: date | None = None, notifier: Any | None = None) -> RunSummary:
     """Run one full pass and return its summary.
 
@@ -53,10 +75,11 @@ def run(config: Config, today: date | None = None, notifier: Any | None = None) 
     summary = RunSummary()
 
     logger.info(
-        "Process started source=%s run_date=%s threshold_days=%d dry_run=%s",
+        "Process started source=%s run_date=%s threshold_days=%d channel=%s dry_run=%s",
         config.source,
         run_date.isoformat(),
         config.overdue_alert_threshold_days,
+        config.notification_channel,
         config.dry_run,
     )
 
@@ -70,7 +93,7 @@ def run(config: Config, today: date | None = None, notifier: Any | None = None) 
         logger.warning("Invoice discarded invoice=%s reason=%s", item.invoice_id, item.reason)
 
     store = NotificationStore(config.state_file_path, dry_run=config.dry_run)
-    active_notifier = notifier if notifier is not None else LoggingNotifier(config.operations_email)
+    active_notifier = notifier if notifier is not None else build_notifier(config)
 
     for invoice in invoices:
         notifications = evaluate_invoice(invoice, run_date, config.overdue_alert_threshold_days)

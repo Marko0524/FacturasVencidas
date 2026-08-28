@@ -76,6 +76,14 @@ def make_config(tmp_path: Path, url: str = API_URL, max_retries: int = 3) -> Con
         sample_data_path=tmp_path / "invoices.json",
         log_level="INFO",
         dry_run=False,
+        notification_channel="log",
+        smtp_host="localhost",
+        smtp_port=1025,
+        smtp_username="",
+        smtp_password="",
+        smtp_use_tls=False,
+        email_from="cobranza@empresa.com",
+        email_from_name="Cobranza Empresa",
     )
 
 
