@@ -27,3 +27,8 @@ venv/
 
 # Office lock files, created while a .docx in docs/ is open
 ~$*
+
+# Node (frontend del asistente)
+node_modules/
+dist/
+.vite/

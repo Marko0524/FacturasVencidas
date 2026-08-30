@@ -1,0 +1,27 @@
+# Postgres con pgvector para el asistente.
+#
+#   docker compose up -d
+#
+# Los datos viven en un volumen con nombre: sin él, cada `down` borraría los
+# documentos cargados y habría que volver a pagar los embeddings de todo.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: asistente-postgres
+    environment:
+      POSTGRES_USER: asistente
+      POSTGRES_PASSWORD: asistente
+      POSTGRES_DB: asistente
+    ports:
+      - "5432:5432"
+    volumes:
+      - datos-postgres:/var/lib/postgresql/data
+    healthcheck:
+      # Sin esto, el backend arranca antes de que la base acepte conexiones.
+      test: ["CMD-SHELL", "pg_isready -U asistente -d asistente"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  datos-postgres:

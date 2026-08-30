@@ -1,0 +1,29 @@
+# Lo que no debe entrar en la imagen.
+#
+# `node_modules` y `dist` van los primeros por tamaño, pero los que importan de
+# verdad son `.env` y cualquier JSON de credenciales: un secreto copiado a una
+# capa se queda ahí para siempre, viaja a quien pueda descargar la imagen y no
+# se borra reconstruyendo encima.
+
+.env
+.env.*
+!.env.example
+*.json.key
+*-credentials.json
+*service-account*.json
+
+frontend/node_modules
+frontend/dist
+backend/.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+
+# Las pruebas no se ejecutan dentro de la imagen; que no ocupen ni aparezcan.
+backend/tests
+frontend/src/prosa.prueba.mjs
+
+.git
+.gitignore
+README.md
+docker-compose.yml

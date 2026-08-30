@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asistente de pólizas y facturación</title>
+    <script>
+      // Corre antes del primer pintado, a propósito. Si el tema se aplicara ya
+      // dentro de React, quien tenga el modo oscuro vería un fogonazo blanco en
+      // cada carga: la página se pinta y solo después se corrige.
+      (function () {
+        try {
+          // Lo guardado manda; si no hay nada, decide el sistema. Una vez que
+          // alguien elige, el sistema deja de opinar.
+          var guardado = localStorage.getItem('tema')
+          var tema =
+            guardado === 'claro' || guardado === 'oscuro'
+              ? guardado
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'oscuro'
+                : 'claro'
+          document.documentElement.dataset.tema = tema
+        } catch (e) {
+          // Modo privado o almacenamiento bloqueado: se sigue el sistema y ya.
+          document.documentElement.dataset.tema = 'claro'
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
