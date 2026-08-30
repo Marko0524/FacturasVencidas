@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" role="img" aria-label="Diagrama de arquitectura: la SPA de React autentica con Entra ID y pasa por API Management hasta el orquestador de Python, que se bifurca en dos caminos de datos distintos: recuperacion de documentos en Azure AI Search filtrada por ACL, y consultas transaccionales al API de facturacion con identidad delegada. Azure OpenAI solo recibe el contexto ya recortado.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 610" width="900" height="610" role="img" aria-label="Diagrama de arquitectura: una SPA de React habla con un orquestador de FastAPI mediante un token de sesion firmado. El orquestador abre dos caminos de datos distintos: recuperacion documental sobre Postgres con pgvector, donde el permiso del cliente va dentro de la consulta SQL, y consulta transaccional al sistema de registro de facturas, cuyas cifras inserta el codigo. El proveedor de modelo esta detras de una interfaz de dos metodos, intercambiable entre Azure OpenAI, Vertex AI y Gemini, y solo recibe contexto ya recortado por permisos.">
   <title>Arquitectura del asistente: dos formas de datos, dos caminos</title>
   <style>
     .bg   { fill: #FBFCFD; }
@@ -6,6 +6,7 @@
     .soft { fill: #E7EDF1; stroke: #B4C1C9; stroke-width: 1; }
     .rag  { fill: #E2F0F1; stroke: #0E6E7A; stroke-width: 1.2; }
     .txn  { fill: #F6EDDD; stroke: #9A6212; stroke-width: 1.2; }
+    .swap { fill: #FFFFFF; stroke: #4A5A68; stroke-width: 1.1; stroke-dasharray: 4 3; }
     .t    { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #14202B; }
     .s    { font-family: Georgia, "Times New Roman", serif; font-size: 11.5px; fill: #4A5A68; }
     .l    { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 10.5px; fill: #75868F; }
@@ -28,61 +29,80 @@
     </marker>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="900" height="560"/>
+  <rect class="bg" x="0" y="0" width="900" height="610"/>
 
-  <rect class="box" x="310" y="28" width="280" height="52" rx="3"/>
-  <text class="t" x="450" y="50" text-anchor="middle">SPA en React</text>
-  <text class="s" x="450" y="68" text-anchor="middle">chat, citas visibles, feedback</text>
+  <!-- Cliente -->
+  <rect class="box" x="300" y="24" width="300" height="54" rx="3"/>
+  <text class="t" x="450" y="46" text-anchor="middle">SPA en React · Vite</text>
+  <text class="s" x="450" y="64" text-anchor="middle">chat · citas abribles · valoración</text>
 
-  <line class="e" x1="450" y1="80" x2="450" y2="114" marker-end="url(#ar)"/>
-  <text class="l" x="462" y="101">token de Entra ID (MSAL)</text>
+  <line class="e" x1="450" y1="78" x2="450" y2="112" marker-end="url(#ar)"/>
+  <text class="l" x="462" y="99">token de sesión firmado (HMAC)</text>
 
-  <rect class="box" x="310" y="118" width="280" height="52" rx="3"/>
-  <text class="t" x="450" y="140" text-anchor="middle">API Management</text>
-  <text class="s" x="450" y="158" text-anchor="middle">cuota por usuario, WAF</text>
+  <!-- Orquestador -->
+  <rect class="soft" x="238" y="116" width="424" height="94" rx="3"/>
+  <text class="t" x="450" y="140" text-anchor="middle">Orquestador en Python · FastAPI</text>
+  <text class="s" x="450" y="160" text-anchor="middle">clasificador de intención · guardrails de anclaje</text>
+  <text class="s" x="450" y="178" text-anchor="middle">memoria de conversación · escalamientos</text>
+  <text class="l" x="450" y="198" text-anchor="middle">sirve también la interfaz compilada: un solo origen</text>
 
-  <line class="e" x1="450" y1="170" x2="450" y2="204" marker-end="url(#ar)"/>
+  <!-- Tres salidas -->
+  <path class="er" d="M 290 210 L 150 268" marker-end="url(#arRag)"/>
+  <text class="lr" x="146" y="244" text-anchor="middle">documentos · filtro por cuenta</text>
 
-  <rect class="soft" x="250" y="208" width="400" height="82" rx="3"/>
-  <text class="t" x="450" y="232" text-anchor="middle">Orquestador en Python · FastAPI</text>
-  <text class="s" x="450" y="252" text-anchor="middle">clasificador de intención · guardrails</text>
-  <text class="s" x="450" y="270" text-anchor="middle">function calling · trazas</text>
+  <line class="e" x1="450" y1="210" x2="450" y2="268" marker-end="url(#ar)"/>
+  <text class="l" x="462" y="244">contexto ya recortado</text>
 
-  <path class="er" d="M 300 290 L 150 344" marker-end="url(#arRag)"/>
-  <text class="lr" x="150" y="322" text-anchor="middle">documentos · filtro ACL</text>
+  <path class="et" d="M 610 210 L 750 268" marker-end="url(#arTxn)"/>
+  <text class="lt" x="754" y="244" text-anchor="middle">transacciones · por cuenta</text>
 
-  <line class="e" x1="450" y1="290" x2="450" y2="344" marker-end="url(#ar)"/>
-  <text class="l" x="462" y="322">contexto recortado</text>
+  <!-- Recuperación -->
+  <rect class="rag" x="22" y="272" width="256" height="82" rx="3"/>
+  <text class="t" x="150" y="295" text-anchor="middle">Postgres + pgvector</text>
+  <text class="s" x="150" y="313" text-anchor="middle">distancia coseno con piso de similitud</text>
+  <text class="s" x="150" y="331" text-anchor="middle">el permiso va DENTRO del WHERE:</text>
+  <text class="s" x="150" y="347" text-anchor="middle">un fragmento ajeno no llega a puntuar</text>
 
-  <path class="et" d="M 600 290 L 750 344" marker-end="url(#arTxn)"/>
-  <text class="lt" x="750" y="322" text-anchor="middle">transacciones · on-behalf-of</text>
+  <!-- Modelo -->
+  <rect class="box" x="322" y="272" width="256" height="82" rx="3"/>
+  <text class="t" x="450" y="295" text-anchor="middle">Proveedor de modelo</text>
+  <text class="s" x="450" y="313" text-anchor="middle">interfaz de dos métodos:</text>
+  <text class="s" x="450" y="329" text-anchor="middle">completar() y embeber()</text>
+  <text class="s" x="450" y="347" text-anchor="middle">nunca ve datos de otra cuenta</text>
 
-  <rect class="rag" x="25" y="348" width="250" height="66" rx="3"/>
-  <text class="t" x="150" y="371" text-anchor="middle">Azure AI Search</text>
-  <text class="s" x="150" y="389" text-anchor="middle">híbrido + reranker semántico</text>
-  <text class="s" x="150" y="405" text-anchor="middle">cada chunk lleva su ACL</text>
+  <!-- Transaccional -->
+  <rect class="txn" x="622" y="272" width="256" height="82" rx="3"/>
+  <text class="t" x="750" y="295" text-anchor="middle">Sistema de registro</text>
+  <text class="s" x="750" y="313" text-anchor="middle">estado de facturas, en vivo</text>
+  <text class="s" x="750" y="331" text-anchor="middle">las cifras las escribe el código,</text>
+  <text class="s" x="750" y="347" text-anchor="middle">no el modelo</text>
 
-  <rect class="box" x="325" y="348" width="250" height="66" rx="3"/>
-  <text class="t" x="450" y="371" text-anchor="middle">Azure OpenAI</text>
-  <text class="s" x="450" y="389" text-anchor="middle">gpt-4o para generación</text>
-  <text class="s" x="450" y="405" text-anchor="middle">embeddings para el índice</text>
+  <!-- Intercambiabilidad del modelo -->
+  <line class="e" x1="450" y1="354" x2="450" y2="384" marker-end="url(#ar)"/>
+  <rect class="swap" x="300" y="388" width="300" height="62" rx="3"/>
+  <text class="t" x="450" y="410" text-anchor="middle">Azure OpenAI · Vertex AI · Gemini</text>
+  <text class="s" x="450" y="428" text-anchor="middle">intercambiables por configuración;</text>
+  <text class="s" x="450" y="444" text-anchor="middle">ninguno decide qué se puede leer</text>
 
-  <rect class="txn" x="625" y="348" width="250" height="66" rx="3"/>
-  <text class="t" x="750" y="371" text-anchor="middle">API de facturación</text>
-  <text class="s" x="750" y="389" text-anchor="middle">sistema de registro</text>
-  <text class="s" x="750" y="405" text-anchor="middle">autoriza por sí mismo</text>
+  <!-- Fuentes -->
+  <line class="e" x1="150" y1="452" x2="150" y2="358" marker-end="url(#ar)"/>
+  <text class="l" x="160" y="410">ingesta · troceo · embeddings</text>
 
-  <line class="e" x1="150" y1="458" x2="150" y2="418" marker-end="url(#ar)"/>
-  <text class="l" x="160" y="440">ingesta</text>
+  <rect class="box" x="22" y="456" width="256" height="72" rx="3"/>
+  <text class="t" x="150" y="479" text-anchor="middle">Corpus y cargas del cliente</text>
+  <text class="s" x="150" y="497" text-anchor="middle">condiciones y anexos, más los PDF</text>
+  <text class="s" x="150" y="513" text-anchor="middle">que sube cada cuenta</text>
 
-  <rect class="box" x="25" y="462" width="250" height="58" rx="3"/>
-  <text class="t" x="150" y="484" text-anchor="middle">Blob Storage</text>
-  <text class="s" x="150" y="502" text-anchor="middle">pólizas, condiciones, FAQ</text>
+  <line class="e" x1="750" y1="452" x2="750" y2="358" marker-end="url(#ar)"/>
+  <text class="l" x="760" y="410">lectura</text>
 
-  <line class="e" x1="750" y1="458" x2="750" y2="418" marker-end="url(#ar)"/>
-  <text class="l" x="760" y="440">lectura</text>
+  <rect class="box" x="622" y="456" width="256" height="72" rx="3"/>
+  <text class="t" x="750" y="479" text-anchor="middle">Mismo dataset que el job</text>
+  <text class="s" x="750" y="497" text-anchor="middle">de recordatorios: una sola verdad,</text>
+  <text class="s" x="750" y="513" text-anchor="middle">nunca se vectoriza</text>
 
-  <rect class="box" x="625" y="462" width="250" height="58" rx="3"/>
-  <text class="t" x="750" y="484" text-anchor="middle">ERP / BD de facturación</text>
-  <text class="s" x="750" y="502" text-anchor="middle">nunca se vectoriza</text>
+  <!-- Despliegue -->
+  <rect class="box" x="300" y="536" width="300" height="52" rx="3"/>
+  <text class="t" x="450" y="558" text-anchor="middle">Cloud Run · Cloud SQL</text>
+  <text class="s" x="450" y="576" text-anchor="middle">identidad adjunta, sin llaves en la imagen</text>
 </svg>

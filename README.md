@@ -14,7 +14,7 @@ El dominio es común a todos los bloques: **LeaseMD** administra pólizas y fact
 |---|---|---|---|
 | **1** · Aterrizaje | Convertir un requerimiento ambiguo en un alcance comprometible | Documentación de ingeniería | §11 · [documento](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx) |
 | **2** · Automatización | Recordatorios de pago y escalamiento a Operaciones | Python, `requests`, pytest, Docker | §1–§10 · `app/`, `main.py`, `tests/` |
-| **3** · Asistente de IA | Responder dudas de pólizas y facturación con gobierno de datos | Azure OpenAI + RAG, FastAPI, React | §13 · [diseño](docs/asistente-ia.md) y [diagramas](docs/diagramas) |
+| **3** · Asistente de IA | Responder dudas de pólizas y facturación con gobierno de datos | Azure OpenAI / Vertex AI / Gemini, pgvector, FastAPI, React | §13 · [diseño](docs/asistente-ia.md), [diagramas](docs/diagramas) e **[implementación](asistente/)** — 319 pruebas |
 | **4** · Conceptuales | Siete preguntas técnicas, ancladas en este código | — | §14 · [respuestas](docs/preguntas-tecnicas.md) |
 | **5** · SQL *(bonus)* | Facturas vencidas y saldo por cliente | T-SQL / Azure SQL | §12 · [consultas](sql/consultas.sql) |
 | **6** · Low-code *(bonus)* | Este mismo job en Power Automate frente a Python | — | §15 · [comparación](docs/low-code-vs-codigo.md) |
@@ -214,12 +214,12 @@ Comprobado con Docker 29.7.2:
 
 ```text
 # CON volumen -v ./state:/app/state
-run 1 -> fetched=9 invalid=1 overdue=5 reminders=5 alerts=2 skipped=0 errors=0
-run 2 -> fetched=9 invalid=1 overdue=5 reminders=0 alerts=0 skipped=7 errors=0   <- idempotente
+run 1 -> fetched=16 invalid=1 overdue=8 reminders=8 alerts=4 skipped=0  errors=0
+run 2 -> fetched=16 invalid=1 overdue=8 reminders=0 alerts=0 skipped=12 errors=0   <- idempotente
 
 # SIN volumen
-run 1 -> fetched=9 invalid=1 overdue=5 reminders=5 alerts=2 skipped=0 errors=0
-run 2 -> fetched=9 invalid=1 overdue=5 reminders=5 alerts=2 skipped=0 errors=0   <- reenvía todo
+run 1 -> fetched=16 invalid=1 overdue=8 reminders=8 alerts=4 skipped=0 errors=0
+run 2 -> fetched=16 invalid=1 overdue=8 reminders=8 alerts=4 skipped=0 errors=0   <- reenvía todo
 ```
 
 **Enviando correo real desde el contenedor:** `localhost` dentro del contenedor no es el host, así que Mailpit hay que alcanzarlo por su nombre de red.
@@ -341,75 +341,69 @@ La interfaz de `NotificationStore` (`was_processed` / `mark_processed`) está pe
 
 ## 9. Salida de ejemplo
 
-Ejecución real, dataset del repositorio, fecha de referencia 2026-08-21.
+Ejecución real, dataset del repositorio, fecha de referencia 2026-08-29.
 
 **Primera ejecución:**
 
 ```text
-2026-08-21 17:35:32 INFO     Process started source=file run_date=2026-08-21 threshold_days=10 channel=log dry_run=False
-2026-08-21 17:35:32 INFO     Reading invoices from local file path=...\sample_data\invoices.json
-2026-08-21 17:35:32 INFO     Invoices fetched count=9
-2026-08-21 17:35:32 WARNING  Invoice discarded invoice=INV-9999 reason=invalid_due_date
-2026-08-21 17:35:32 INFO     No previous notification state found path=...\state\notifications.json
-2026-08-21 17:35:32 INFO     Invoice is overdue invoice=INV-1003 days_overdue=5 due_date=2026-08-16
-2026-08-21 17:35:32 INFO     Payment reminder sent to=cliente@empresa.com invoice=INV-1003 customer="Empresa Demo" amount=15000.50 currency=MXN due_date=2026-08-16
-2026-08-21 17:35:32 INFO     Invoice is overdue invoice=INV-1004 days_overdue=10 due_date=2026-08-11
-2026-08-21 17:35:32 INFO     Payment reminder sent to=finanzas@meridiano.mx invoice=INV-1004 customer="Grupo Meridiano" amount=4780.00 currency=MXN due_date=2026-08-11
-2026-08-21 17:35:32 INFO     Invoice is overdue invoice=INV-1005 days_overdue=15 due_date=2026-08-06
-2026-08-21 17:35:32 INFO     Payment reminder sent to=tesoreria@textilesbajio.mx invoice=INV-1005 customer="Textiles del Bajio" amount=61250.00 currency=MXN due_date=2026-08-06
-2026-08-21 17:35:32 WARNING  Operations alert sent to=operaciones@empresa.com invoice=INV-1005 customer="Textiles del Bajio" days_overdue=15 amount=61250.00 currency=MXN
-2026-08-21 17:35:32 INFO     Invoice is overdue invoice=INV-1006 days_overdue=3 due_date=2026-08-18
-2026-08-21 17:35:32 INFO     Payment reminder sent to=admin@silopez.mx invoice=INV-1006 customer="Servicios Integrales Lopez" amount=3120.30 currency=MXN due_date=2026-08-18
-2026-08-21 17:35:32 INFO     Invoice is overdue invoice=INV-1007 days_overdue=25 due_date=2026-07-27
-2026-08-21 17:35:32 INFO     Payment reminder sent to=pagos@logpacifico.mx invoice=INV-1007 customer="Logistica Pacifico" amount=98500.00 currency=MXN due_date=2026-07-27
-2026-08-21 17:35:32 WARNING  Operations alert sent to=operaciones@empresa.com invoice=INV-1007 customer="Logistica Pacifico" days_overdue=25 amount=98500.00 currency=MXN
-2026-08-21 17:35:32 INFO     Process finished fetched=9 invalid=1 overdue=5 reminders=5 alerts=2 skipped=0 errors=0
+2026-08-29 02:06:36 INFO     Process started source=file run_date=2026-08-29 threshold_days=10 channel=log dry_run=False
+2026-08-29 02:06:36 INFO     Invoices fetched count=16
+2026-08-29 02:06:36 WARNING  Invoice discarded invoice=INV-9999 reason=invalid_due_date
+2026-08-29 02:06:36 INFO     Payment reminder sent to=cliente@empresa.com invoice=INV-1003 customer="Empresa Demo" amount=15000.50 currency=MXN due_date=2026-08-24
+2026-08-29 02:06:36 INFO     Payment reminder sent to=finanzas@meridiano.mx invoice=INV-1004 customer="Grupo Meridiano" amount=4780.00 currency=MXN due_date=2026-08-19
+2026-08-29 02:06:36 INFO     Payment reminder sent to=tesoreria@textilesbajio.mx invoice=INV-1005 customer="Textiles del Bajio" amount=61250.00 currency=MXN due_date=2026-08-14
+2026-08-29 02:06:36 WARNING  Operations alert sent to=o5n3it82yy@lnovic.com invoice=INV-1005 customer="Textiles del Bajio" days_overdue=15 amount=61250.00 currency=MXN
+2026-08-29 02:06:36 INFO     Payment reminder sent to=kayelo3614@neowd.com invoice=INV-1006 customer="Servicios Integrales Lopez" amount=3120.30 currency=MXN due_date=2026-08-26
+2026-08-29 02:06:36 INFO     Payment reminder sent to=kayelo3614@neowd.com invoice=INV-1007 customer="Logistica Pacifico" amount=98500.00 currency=MXN due_date=2026-08-04
+2026-08-29 02:06:36 WARNING  Operations alert sent to=o5n3it82yy@lnovic.com invoice=INV-1007 customer="Logistica Pacifico" days_overdue=25 amount=98500.00 currency=MXN
+2026-08-29 02:06:36 INFO     Payment reminder sent to=pagos@aurora.mx invoice=INV-2001 customer="Comercial Aurora" amount=12750.00 currency=MXN due_date=2026-08-25
+2026-08-29 02:06:36 INFO     Payment reminder sent to=contabilidad@zenit.mx invoice=INV-2003 customer="Constructora Zenit" amount=45300.00 currency=MXN due_date=2026-08-11
+2026-08-29 02:06:36 WARNING  Operations alert sent to=o5n3it82yy@lnovic.com invoice=INV-2003 customer="Constructora Zenit" days_overdue=18 amount=45300.00 currency=MXN
+2026-08-29 02:06:36 INFO     Payment reminder sent to=finanzas@meridiano.mx invoice=INV-2005 customer="Grupo Meridiano" amount=28400.00 currency=MXN due_date=2026-07-27
+2026-08-29 02:06:36 WARNING  Operations alert sent to=o5n3it82yy@lnovic.com invoice=INV-2005 customer="Grupo Meridiano" days_overdue=33 amount=28400.00 currency=MXN
+2026-08-29 02:06:36 INFO     Process finished fetched=16 invalid=1 overdue=8 reminders=8 alerts=4 skipped=0 errors=0
 ```
 
 **Segunda ejecución, inmediatamente después — la idempotencia en acción:**
 
 ```text
-2026-08-21 17:35:36 INFO     Process started source=file run_date=2026-08-21 threshold_days=10 channel=log dry_run=False
-2026-08-21 17:35:36 INFO     Invoices fetched count=9
-2026-08-21 17:35:36 WARNING  Invoice discarded invoice=INV-9999 reason=invalid_due_date
-2026-08-21 17:35:36 INFO     Notification state loaded path=...\state\notifications.json entries=7
-2026-08-21 17:35:36 INFO     Invoice is overdue invoice=INV-1003 days_overdue=5 due_date=2026-08-16
-2026-08-21 17:35:36 INFO     Notification skipped reason=already_processed invoice=INV-1003 type=reminder
-2026-08-21 17:35:36 INFO     Invoice is overdue invoice=INV-1005 days_overdue=15 due_date=2026-08-06
-2026-08-21 17:35:36 INFO     Notification skipped reason=already_processed invoice=INV-1005 type=reminder
-2026-08-21 17:35:36 INFO     Notification skipped reason=already_processed invoice=INV-1005 type=operations_alert
-2026-08-21 17:35:36 INFO     Process finished fetched=9 invalid=1 overdue=5 reminders=0 alerts=0 skipped=7 errors=0
+2026-08-29 02:06:38 INFO     Process finished fetched=16 invalid=1 overdue=8 reminders=0 alerts=0 skipped=12 errors=0
 ```
 
-Mismas 5 facturas vencidas, **0 notificaciones enviadas, 7 omitidas**.
+Mismas 8 facturas vencidas, **0 notificaciones enviadas, 12 omitidas**.
 
 ### 9.1 Envío real por SMTP
 
-Misma ejecución con `NOTIFICATION_CHANNEL=smtp`, fecha de referencia 2026-08-28, contra los dos servidores. Dos facturas del dataset apuntan a buzones temporales reales, y `OPERATIONS_EMAIL` a un tercero, para poder leer el correo como lo lee el destinatario.
+Misma ejecución con `NOTIFICATION_CHANNEL=smtp`, fecha de referencia 2026-08-29, contra los dos servidores. Dos facturas del dataset apuntan a buzones temporales reales, y `OPERATIONS_EMAIL` a un tercero, para poder leer el correo como lo lee el destinatario.
 
 ```text
-2026-08-28 13:59:24 INFO     Process started source=file run_date=2026-08-28 threshold_days=10 channel=smtp dry_run=False
-2026-08-28 13:59:24 INFO     Invoices fetched count=9
-2026-08-28 13:59:24 WARNING  Invoice discarded invoice=INV-9999 reason=invalid_due_date
-2026-08-28 13:59:25 INFO     Email sent via=smtp to=cliente@empresa.com invoice=INV-1003 type=reminder subject='Recordatorio de pago - Factura INV-1003'
-2026-08-28 13:59:26 INFO     Email sent via=smtp to=finanzas@meridiano.mx invoice=INV-1004 type=reminder subject='Recordatorio de pago - Factura INV-1004'
-2026-08-28 13:59:27 INFO     Email sent via=smtp to=tesoreria@textilesbajio.mx invoice=INV-1005 type=reminder subject='Recordatorio de pago - Factura INV-1005'
-2026-08-28 13:59:28 INFO     Email sent via=smtp to=o5n3it82yy@lnovic.com invoice=INV-1005 type=operations_alert subject='[ALERTA] Factura INV-1005 con 15 dias de atraso'
-2026-08-28 13:59:29 INFO     Email sent via=smtp to=kayelo3614@neowd.com invoice=INV-1006 type=reminder subject='Recordatorio de pago - Factura INV-1006'
-2026-08-28 13:59:30 INFO     Email sent via=smtp to=kayelo3614@neowd.com invoice=INV-1007 type=reminder subject='Recordatorio de pago - Factura INV-1007'
-2026-08-28 13:59:31 INFO     Email sent via=smtp to=o5n3it82yy@lnovic.com invoice=INV-1007 type=operations_alert subject='[ALERTA] Factura INV-1007 con 25 dias de atraso'
-2026-08-28 13:59:31 INFO     Process finished fetched=9 invalid=1 overdue=5 reminders=5 alerts=2 skipped=0 errors=0
+2026-08-29 02:08:18 INFO     Process started source=file run_date=2026-08-29 threshold_days=10 channel=smtp dry_run=False
+2026-08-29 02:08:18 INFO     Invoices fetched count=16
+2026-08-29 02:08:18 WARNING  Invoice discarded invoice=INV-9999 reason=invalid_due_date
+2026-08-29 02:08:19 INFO     Email sent via=smtp to=cliente@empresa.com invoice=INV-1003 type=reminder subject='Recordatorio de pago - Factura INV-1003'
+2026-08-29 02:08:20 INFO     Email sent via=smtp to=finanzas@meridiano.mx invoice=INV-1004 type=reminder subject='Recordatorio de pago - Factura INV-1004'
+2026-08-29 02:08:21 INFO     Email sent via=smtp to=tesoreria@textilesbajio.mx invoice=INV-1005 type=reminder subject='Recordatorio de pago - Factura INV-1005'
+2026-08-29 02:08:22 INFO     Email sent via=smtp to=o5n3it82yy@lnovic.com invoice=INV-1005 type=operations_alert subject='[ALERTA] Factura INV-1005 con 15 dias de atraso'
+2026-08-29 02:08:23 INFO     Email sent via=smtp to=kayelo3614@neowd.com invoice=INV-1006 type=reminder subject='Recordatorio de pago - Factura INV-1006'
+2026-08-29 02:08:24 INFO     Email sent via=smtp to=kayelo3614@neowd.com invoice=INV-1007 type=reminder subject='Recordatorio de pago - Factura INV-1007'
+2026-08-29 02:08:25 INFO     Email sent via=smtp to=o5n3it82yy@lnovic.com invoice=INV-1007 type=operations_alert subject='[ALERTA] Factura INV-1007 con 25 dias de atraso'
+2026-08-29 02:08:26 INFO     Email sent via=smtp to=pagos@aurora.mx invoice=INV-2001 type=reminder subject='Recordatorio de pago - Factura INV-2001'
+2026-08-29 02:08:27 INFO     Email sent via=smtp to=contabilidad@zenit.mx invoice=INV-2003 type=reminder subject='Recordatorio de pago - Factura INV-2003'
+2026-08-29 02:08:28 INFO     Email sent via=smtp to=o5n3it82yy@lnovic.com invoice=INV-2003 type=operations_alert subject='[ALERTA] Factura INV-2003 con 18 dias de atraso'
+2026-08-29 02:08:29 INFO     Email sent via=smtp to=finanzas@meridiano.mx invoice=INV-2005 type=reminder subject='Recordatorio de pago - Factura INV-2005'
+2026-08-29 02:08:29 INFO     Email sent via=smtp to=o5n3it82yy@lnovic.com invoice=INV-2005 type=operations_alert subject='[ALERTA] Factura INV-2005 con 33 dias de atraso'
+2026-08-29 02:08:29 INFO     Process finished fetched=16 invalid=1 overdue=8 reminders=8 alerts=4 skipped=0 errors=0
 ```
 
-7 mensajes: 5 recordatorios a los clientes y 2 alertas a Operaciones. `INV-1004`, con exactamente 10 días de atraso, recibe recordatorio y **ninguna** alerta — el borde del umbral, verificable en la bandeja.
+12 mensajes: 8 recordatorios a los clientes y 4 alertas a Operaciones. `INV-1004`, con exactamente 10 días de atraso, recibe recordatorio y **ninguna** alerta — el borde del umbral, verificable en la bandeja.
 
-**Idempotencia sobre correo real.** Segunda ejecución inmediata: `skipped=7`, cero envíos, la bandeja intacta en 7 mensajes. Ni un duplicado.
+**Idempotencia sobre correo real.** Segunda ejecución inmediata: `skipped=12`, cero envíos, la bandeja intacta en 12 mensajes. Ni un duplicado.
 
 **Fallo de entrega.** Apuntando a un puerto SMTP muerto, cada envío falla, se cuenta y el lote continúa:
 
 ```text
 app.notifier.NotificationError: smtp_delivery_failed invoice=INV-1003 type=reminder: [WinError 10061] ...
-Process finished fetched=9 invalid=1 overdue=5 reminders=0 alerts=0 skipped=0 errors=7
+Process finished fetched=16 invalid=1 overdue=8 reminders=0 alerts=0 skipped=0 errors=12
 exit code = 1
 ```
 
@@ -421,7 +415,7 @@ La misma corrida por Mailpit y por Gmail no da el mismo resultado, y ahí está 
 
 | | Mailpit | Gmail |
 |---|---|---|
-| Los 7 mensajes | Enviados | Enviados |
+| Los mensajes del lote | Enviados | Enviados |
 | `cliente@empresa.com` | Visible en la bandeja | **Rebotó** — el buzón no existe |
 | `tesoreria@textilesbajio.mx` | Visible en la bandeja | **Rebotó** — el buzón no existe |
 | Duración | ~7 s | ~24 s (TLS y login por mensaje) |
@@ -487,19 +481,30 @@ La parte HTML está escrita para clientes de correo, no para navegadores: tablas
 
 ### El dataset
 
-9 facturas que cubren todas las ramas de decisión:
+16 facturas que cubren todas las ramas de decisión:
 
-| Factura | Estado | Atraso | Resultado esperado |
-|---|---|---|---|
-| INV-1001 | `paid` | 20 días | Ninguna acción |
-| INV-1002 | `pending` | −7 (vigente) | Ninguna acción |
-| INV-1003 | `pending` | 5 días | Recordatorio |
-| INV-1004 | `pending` | **10 días (borde)** | Recordatorio, **sin** alerta |
-| INV-1005 | `pending` | 15 días | Recordatorio + alerta |
-| INV-1006 | `pending` | 3 días | Recordatorio → **buzón real** |
-| INV-1007 | `pending` | 25 días | Recordatorio + alerta → **buzones reales** |
-| INV-1008 | `cancelled` | 40 días | Ninguna acción |
-| INV-9999 | `pending` | fecha inválida | Descartada con `WARNING` |
+| Factura | Cliente | Estado | Atraso | Resultado esperado |
+|---|---|---|---|---|
+| INV-1001 | Aurora | `paid` | 20 días | Ninguna acción |
+| INV-1002 | Del Norte | `pending` | −7 (vigente) | Ninguna acción |
+| INV-1003 | Empresa Demo | `pending` | 5 días | Recordatorio |
+| INV-1004 | Meridiano | `pending` | **10 días (borde)** | Recordatorio, **sin** alerta |
+| INV-1005 | Textiles | `pending` | 15 días | Recordatorio + alerta |
+| INV-1006 | Logistica | `pending` | 3 días | Recordatorio → **buzón real** |
+| INV-1007 | Logistica | `pending` | 25 días | Recordatorio + alerta → **buzones reales** |
+| INV-1008 | Zenit | `cancelled` | 40 días | Ninguna acción |
+| INV-2001 | Aurora | `pending` | 4 días | Recordatorio |
+| INV-2002 | Aurora | `pending` | −12 (vigente) | Ninguna acción |
+| INV-2003 | Zenit | `pending` | 18 días | Recordatorio + alerta |
+| INV-2004 | Zenit | `paid` | 30 días | Ninguna acción |
+| INV-2005 | Meridiano | `pending` | 33 días | Recordatorio + alerta |
+| INV-2006 | Meridiano | `paid` | 45 días | Ninguna acción |
+| INV-2007 | Logistica | `paid` | 12 días | Ninguna acción |
+| INV-9999 | — | `pending` | fecha inválida | Descartada con `WARNING` |
+
+Resultado: `fetched=16 invalid=1 overdue=8 reminders=8 alerts=4`.
+
+Las cuatro cuentas del asistente ([bloque 3](asistente/)) tienen aquí facturas propias, con casos mezclados —pagada, vigente, vencida y por encima del umbral— para que entrar como cualquiera de ellas muestre algo real.
 
 `INV-1006` e `INV-1007` apuntan a buzones temporales reales, y `OPERATIONS_EMAIL` en `.env.example` a un tercero: así el envío real ([§9.1](#91-envío-real-por-smtp)) se puede leer como lo lee el destinatario. El dataset se regenera con `scripts/refresh_sample_data.py`, que es donde viven esas direcciones — editarlas ahí es lo que hace que sobrevivan a un refresco.
 
@@ -588,15 +593,31 @@ Igual que en el código Python, la fecha de hoy es un parámetro y no `GETDATE()
 
 ## 13. Asistente interno de IA
 
-Diseño de arquitectura y flujo en [`docs/asistente-ia.md`](docs/asistente-ia.md), con los diagramas como SVG versionados en [`docs/diagramas/`](docs/diagramas).
+Diseño de arquitectura y flujo en [`docs/asistente-ia.md`](docs/asistente-ia.md), con los diagramas como SVG versionados en [`docs/diagramas/`](docs/diagramas). **Y una implementación que corre**, en [`asistente/`](asistente): 319 pruebas, Postgres con pgvector, y el proveedor de modelo intercambiable entre Azure OpenAI, Vertex AI y Gemini.
 
 **Decisión:** Azure OpenAI con RAG, orquestado desde un backend en Python (FastAPI) con una SPA en React — no Copilot Studio. La razón va más allá del stack: las dos intenciones necesitan *formas de datos distintas*. Las pólizas son documentos y se resuelven con recuperación semántica; el estado de una factura es un dato transaccional, vivo y con permisos por cliente, que se resuelve llamando al sistema de registro. Indexar facturas en un almacén vectorial dejaría el dato desactualizado y convertiría el índice en un canal de fuga entre clientes.
 
 Los tres puntos que sostienen el diseño:
 
-- **El recorte por permisos vive en la recuperación**, no en el prompt. Un fragmento no autorizado no es un candidato descartado: no es candidato.
-- **Toda rama negativa escala al humano.** Sin evidencia, respuesta no anclada, sin permiso, API sin datos o intención dudosa terminan en la misma salida. El fallback es el comportamiento por omisión, no el caso raro.
-- **Las cifras no las escribe el modelo.** Importes, fechas y estatus se insertan por código desde el sistema de registro, con plantilla determinista.
+- **El recorte por permisos vive en la recuperación**, no en el prompt. El predicado de visibilidad va dentro de la consulta de ranking: un fragmento no autorizado no es un candidato descartado, no llega a puntuar.
+- **Las cifras no las escribe el modelo.** Importes, fechas, estatus —y también la fecha de hoy y la lista de capacidades— se insertan por código. El modelo elige la ruta y redacta alrededor del dato, nunca lo produce.
+- **Nada se afirma sin evidencia.** Si la respuesta cita un fragmento que no se recuperó —la firma exacta de una respuesta fabricada— se descarta.
+
+Lo que el uso cambió sobre el diseño original, y que está en el documento con su porqué: **«no puedo responder» dejó de ser una sola cosa**. Cuando falta un dato que quien pregunta tiene delante —qué documento, una palabra que acote la búsqueda, el folio correcto— el asistente lo pide y ofrece la salida humana como un botón. Solo lo que queda fuera de alcance, la inyección y las caídas del proveedor van directas a una persona. El caso escalado ahora se guarda con folio, motivo y un contacto que deja el cliente.
+
+### Levantarlo
+
+```bash
+cd asistente && docker compose up -d          # Postgres con pgvector
+
+cd backend && pip install -r requirements.txt
+PYTHONPATH=. LLM_PROVIDER=vertex RETRIEVAL_BACKEND=postgres AUTH_MODE=local \
+  SESSION_SECRET=local python -m uvicorn app.api:app --port 8000
+
+cd ../frontend && npm install && npm run dev   # http://127.0.0.1:5173
+```
+
+Con `LLM_PROVIDER=fake` arranca sin credenciales ni red, que es como corren las pruebas. Para publicarlo en Cloud Run —un solo contenedor que sirve API e interfaz, con la identidad adjunta al servicio y ninguna llave dentro de la imagen— está [`asistente/desplegar.sh`](asistente/desplegar.sh).
 
 ---
 

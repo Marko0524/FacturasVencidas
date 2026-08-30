@@ -6,7 +6,7 @@
       "customer_email": "pagos@aurora.mx",
       "amount": 8200.0,
       "currency": "MXN",
-      "due_date": "2026-08-08",
+      "due_date": "2026-08-09",
       "status": "paid"
     },
     {
@@ -15,7 +15,7 @@
       "customer_email": "cuentas@delnorte.mx",
       "amount": 23400.75,
       "currency": "MXN",
-      "due_date": "2026-09-04",
+      "due_date": "2026-09-05",
       "status": "pending"
     },
     {
@@ -24,7 +24,7 @@
       "customer_email": "cliente@empresa.com",
       "amount": 15000.5,
       "currency": "MXN",
-      "due_date": "2026-08-23",
+      "due_date": "2026-08-24",
       "status": "pending"
     },
     {
@@ -33,7 +33,7 @@
       "customer_email": "finanzas@meridiano.mx",
       "amount": 4780.0,
       "currency": "MXN",
-      "due_date": "2026-08-18",
+      "due_date": "2026-08-19",
       "status": "pending"
     },
     {
@@ -42,7 +42,7 @@
       "customer_email": "tesoreria@textilesbajio.mx",
       "amount": 61250.0,
       "currency": "MXN",
-      "due_date": "2026-08-13",
+      "due_date": "2026-08-14",
       "status": "pending"
     },
     {
@@ -51,7 +51,7 @@
       "customer_email": "kayelo3614@neowd.com",
       "amount": 3120.3,
       "currency": "MXN",
-      "due_date": "2026-08-25",
+      "due_date": "2026-08-26",
       "status": "pending"
     },
     {
@@ -60,7 +60,7 @@
       "customer_email": "kayelo3614@neowd.com",
       "amount": 98500.0,
       "currency": "MXN",
-      "due_date": "2026-08-03",
+      "due_date": "2026-08-04",
       "status": "pending"
     },
     {
@@ -69,8 +69,71 @@
       "customer_email": "contabilidad@zenit.mx",
       "amount": 17300.0,
       "currency": "MXN",
-      "due_date": "2026-07-19",
+      "due_date": "2026-07-20",
       "status": "cancelled"
+    },
+    {
+      "id": "INV-2001",
+      "customer_name": "Comercial Aurora",
+      "customer_email": "pagos@aurora.mx",
+      "amount": 12750.0,
+      "currency": "MXN",
+      "due_date": "2026-08-25",
+      "status": "pending"
+    },
+    {
+      "id": "INV-2002",
+      "customer_name": "Comercial Aurora",
+      "customer_email": "pagos@aurora.mx",
+      "amount": 6890.5,
+      "currency": "MXN",
+      "due_date": "2026-09-10",
+      "status": "pending"
+    },
+    {
+      "id": "INV-2003",
+      "customer_name": "Constructora Zenit",
+      "customer_email": "contabilidad@zenit.mx",
+      "amount": 45300.0,
+      "currency": "MXN",
+      "due_date": "2026-08-11",
+      "status": "pending"
+    },
+    {
+      "id": "INV-2004",
+      "customer_name": "Constructora Zenit",
+      "customer_email": "contabilidad@zenit.mx",
+      "amount": 9150.0,
+      "currency": "MXN",
+      "due_date": "2026-07-30",
+      "status": "paid"
+    },
+    {
+      "id": "INV-2005",
+      "customer_name": "Grupo Meridiano",
+      "customer_email": "finanzas@meridiano.mx",
+      "amount": 28400.0,
+      "currency": "MXN",
+      "due_date": "2026-07-27",
+      "status": "pending"
+    },
+    {
+      "id": "INV-2006",
+      "customer_name": "Grupo Meridiano",
+      "customer_email": "finanzas@meridiano.mx",
+      "amount": 3980.0,
+      "currency": "MXN",
+      "due_date": "2026-07-15",
+      "status": "paid"
+    },
+    {
+      "id": "INV-2007",
+      "customer_name": "Logistica Pacifico",
+      "customer_email": "kayelo3614@neowd.com",
+      "amount": 15600.0,
+      "currency": "MXN",
+      "due_date": "2026-08-17",
+      "status": "paid"
     },
     {
       "id": "INV-9999",

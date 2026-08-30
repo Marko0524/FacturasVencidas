@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" width="900" height="620" role="img" aria-label="Diagrama de flujo: el mensaje pasa por redaccion de PII y prompt shields, luego por el clasificador de intencion, que abre dos caminos con verificaciones: consulta de poliza y estado de factura. Toda rama negativa de cada verificacion, mas la falta de intencion clara, desemboca en el contacto humano.">
-  <title>Flujo de las tres intenciones: todas las fallas drenan al contacto humano</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 660" width="960" height="660" role="img" aria-label="Diagrama de flujo de las intenciones: el mensaje pasa por saneado y deteccion de inyeccion, luego por el clasificador. Consulta de poliza recupera con filtro por cuenta y verifica el anclaje de la respuesta. Estado de factura busca el folio dentro de la cuenta y arma la respuesta con plantilla. Ambas ramas, cuando no pueden sostener una respuesta, van a pedir mas datos en vez de traspasar, y desde ahi la persona puede pedir un ejecutivo. Solo lo que queda fuera de alcance, la inyeccion y las fallas del proveedor van directas al contacto humano.">
+  <title>Flujo de las intenciones: primero preguntar, y el humano cuando hace falta</title>
   <style>
     .bg   { fill: #FBFCFD; }
     .box  { fill: #FFFFFF; stroke: #B4C1C9; stroke-width: 1; }
@@ -7,13 +7,16 @@
     .rag  { fill: #E2F0F1; stroke: #0E6E7A; stroke-width: 1.2; }
     .txn  { fill: #F6EDDD; stroke: #9A6212; stroke-width: 1.2; }
     .dny  { fill: #F7E7E4; stroke: #A03028; stroke-width: 1.2; }
+    .ask  { fill: #EAF1E6; stroke: #4A6B34; stroke-width: 1.2; }
     .dec  { fill: #FFFFFF; stroke: #4A5A68; stroke-width: 1.1; stroke-dasharray: 4 3; }
     .t    { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #14202B; }
     .s    { font-family: Georgia, "Times New Roman", serif; font-size: 11.5px; fill: #4A5A68; }
     .l    { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 10.5px; fill: #75868F; }
     .ld   { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 10.5px; fill: #A03028; }
+    .la   { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 10.5px; fill: #4A6B34; }
     .e    { stroke: #8E9CA6; stroke-width: 1.4; fill: none; }
     .ed   { stroke: #A03028; stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+    .ea   { stroke: #4A6B34; stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
   </style>
 
   <defs>
@@ -23,83 +26,108 @@
     <marker id="arD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 1 L 9 5 L 0 9 z" fill="#A03028"/>
     </marker>
+    <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#4A6B34"/>
+    </marker>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="900" height="620"/>
+  <rect class="bg" x="0" y="0" width="960" height="660"/>
 
-  <rect class="box" x="350" y="14" width="200" height="40" rx="3"/>
-  <text class="t" x="450" y="39" text-anchor="middle">Mensaje del usuario</text>
+  <rect class="box" x="380" y="12" width="200" height="38" rx="3"/>
+  <text class="t" x="480" y="36" text-anchor="middle">Mensaje del cliente</text>
 
-  <line class="e" x1="450" y1="54" x2="450" y2="72" marker-end="url(#ar)"/>
+  <line class="e" x1="480" y1="50" x2="480" y2="68" marker-end="url(#ar)"/>
 
-  <rect class="soft" x="290" y="76" width="320" height="40" rx="3"/>
-  <text class="t" x="450" y="101" text-anchor="middle">Redacción de PII · Prompt Shields</text>
+  <rect class="soft" x="320" y="72" width="320" height="38" rx="3"/>
+  <text class="t" x="480" y="96" text-anchor="middle">Saneado · detección de inyección</text>
 
-  <line class="e" x1="450" y1="116" x2="450" y2="134" marker-end="url(#ar)"/>
+  <line class="e" x1="480" y1="110" x2="480" y2="128" marker-end="url(#ar)"/>
 
-  <rect class="soft" x="310" y="138" width="280" height="42" rx="3"/>
-  <text class="t" x="450" y="164" text-anchor="middle">Clasificador + umbral</text>
+  <rect class="soft" x="340" y="132" width="280" height="40" rx="3"/>
+  <text class="t" x="480" y="157" text-anchor="middle">Clasificador de intención</text>
 
-  <path class="e" d="M 380 180 L 205 208" marker-end="url(#ar)"/>
-  <path class="e" d="M 520 180 L 695 208" marker-end="url(#ar)"/>
+  <!-- Ramas -->
+  <path class="e" d="M 400 172 L 180 206" marker-end="url(#ar)"/>
+  <text class="l" x="180" y="192" text-anchor="middle">PÓLIZA</text>
 
-  <path class="ed" d="M 450 180 L 450 524" marker-end="url(#arD)"/>
-  <text class="ld" x="450" y="352" text-anchor="middle">sin intención clara</text>
+  <path class="e" d="M 560 172 L 780 206" marker-end="url(#ar)"/>
+  <text class="l" x="780" y="192" text-anchor="middle">FACTURA</text>
 
-  <rect class="rag" x="40" y="212" width="330" height="32" rx="3"/>
-  <text class="t" x="205" y="233" text-anchor="middle">Consulta de póliza</text>
+  <line class="e" x1="480" y1="172" x2="480" y2="206" marker-end="url(#ar)"/>
+  <text class="l" x="490" y="192">directas</text>
 
-  <rect class="box" x="40" y="258" width="330" height="38" rx="3"/>
-  <text class="s" x="205" y="282" text-anchor="middle">Recuperación híbrida, filtrada por ACL</text>
-  <line class="e" x1="205" y1="296" x2="205" y2="304" marker-end="url(#ar)"/>
+  <!-- Documental -->
+  <rect class="rag" x="52" y="210" width="256" height="56" rx="3"/>
+  <text class="t" x="180" y="232" text-anchor="middle">Recuperar de sus documentos</text>
+  <text class="s" x="180" y="252" text-anchor="middle">el permiso va dentro de la consulta</text>
 
-  <rect class="dec" x="40" y="308" width="330" height="38" rx="3"/>
-  <text class="s" x="205" y="332" text-anchor="middle">¿evidencia sobre el umbral?</text>
-  <line class="e" x1="205" y1="346" x2="205" y2="354" marker-end="url(#ar)"/>
+  <line class="e" x1="180" y1="266" x2="180" y2="288" marker-end="url(#ar)"/>
+  <rect class="dec" x="72" y="292" width="216" height="38" rx="3"/>
+  <text class="t" x="180" y="316" text-anchor="middle">¿hay evidencia?</text>
 
-  <rect class="box" x="40" y="358" width="330" height="38" rx="3"/>
-  <text class="s" x="205" y="382" text-anchor="middle">Generar con citas obligatorias</text>
-  <line class="e" x1="205" y1="396" x2="205" y2="404" marker-end="url(#ar)"/>
+  <line class="e" x1="180" y1="330" x2="180" y2="352" marker-end="url(#ar)"/>
+  <rect class="rag" x="52" y="356" width="256" height="52" rx="3"/>
+  <text class="t" x="180" y="377" text-anchor="middle">Redactar citando el fragmento</text>
+  <text class="s" x="180" y="396" text-anchor="middle">temperatura baja, cita obligatoria</text>
 
-  <rect class="dec" x="40" y="408" width="330" height="38" rx="3"/>
-  <text class="s" x="205" y="432" text-anchor="middle">¿respuesta anclada al contexto?</text>
-  <line class="e" x1="205" y1="446" x2="205" y2="454" marker-end="url(#ar)"/>
+  <line class="e" x1="180" y1="408" x2="180" y2="430" marker-end="url(#ar)"/>
+  <rect class="dec" x="72" y="434" width="216" height="38" rx="3"/>
+  <text class="t" x="180" y="458" text-anchor="middle">¿va anclada a la cita?</text>
 
-  <rect class="rag" x="40" y="458" width="330" height="32" rx="3"/>
-  <text class="t" x="205" y="479" text-anchor="middle">Respuesta con fuentes</text>
+  <!-- Transaccional -->
+  <rect class="txn" x="652" y="210" width="256" height="56" rx="3"/>
+  <text class="t" x="780" y="232" text-anchor="middle">Buscar el folio EN SU cuenta</text>
+  <text class="s" x="780" y="252" text-anchor="middle">nunca en el conjunto completo</text>
 
-  <path class="ed" d="M 40 327 L 22 327 L 22 556 L 52 556" marker-end="url(#arD)"/>
-  <path class="ed" d="M 40 427 L 22 427"/>
+  <line class="e" x1="780" y1="266" x2="780" y2="288" marker-end="url(#ar)"/>
+  <rect class="dec" x="672" y="292" width="216" height="38" rx="3"/>
+  <text class="t" x="780" y="316" text-anchor="middle">¿es una factura suya?</text>
 
-  <rect class="txn" x="530" y="212" width="330" height="32" rx="3"/>
-  <text class="t" x="695" y="233" text-anchor="middle">Estado de factura</text>
+  <line class="e" x1="780" y1="330" x2="780" y2="352" marker-end="url(#ar)"/>
+  <rect class="txn" x="652" y="356" width="256" height="52" rx="3"/>
+  <text class="t" x="780" y="377" text-anchor="middle">Plantilla determinista</text>
+  <text class="s" x="780" y="396" text-anchor="middle">importe y fecha los pone el código</text>
 
-  <rect class="box" x="530" y="258" width="330" height="38" rx="3"/>
-  <text class="s" x="695" y="282" text-anchor="middle">Extraer folio y periodo</text>
-  <line class="e" x1="695" y1="296" x2="695" y2="304" marker-end="url(#ar)"/>
+  <!-- Directas -->
+  <rect class="box" x="372" y="210" width="216" height="86" rx="3"/>
+  <text class="t" x="480" y="232" text-anchor="middle">Sin llamar al modelo</text>
+  <text class="s" x="480" y="252" text-anchor="middle">RESUMEN de un documento,</text>
+  <text class="s" x="480" y="268" text-anchor="middle">CAPACIDADES, y CONTEXTO:</text>
+  <text class="s" x="480" y="286" text-anchor="middle">fecha y cuenta, que el sistema sabe</text>
 
-  <rect class="dec" x="530" y="308" width="330" height="38" rx="3"/>
-  <text class="s" x="695" y="332" text-anchor="middle">¿el usuario puede verla?</text>
-  <line class="e" x1="695" y1="346" x2="695" y2="354" marker-end="url(#ar)"/>
+  <!-- Respuesta -->
+  <rect class="box" x="372" y="520" width="216" height="46" rx="3"/>
+  <text class="t" x="480" y="542" text-anchor="middle">Respuesta al cliente</text>
+  <text class="s" x="480" y="559" text-anchor="middle">con su evidencia a la vista</text>
 
-  <rect class="box" x="530" y="358" width="330" height="38" rx="3"/>
-  <text class="s" x="695" y="382" text-anchor="middle">API de facturación, identidad delegada</text>
-  <line class="e" x1="695" y1="396" x2="695" y2="404" marker-end="url(#ar)"/>
+  <path class="e" d="M 180 472 L 180 496 L 372 540" marker-end="url(#ar)"/>
+  <path class="e" d="M 780 408 L 780 496 L 588 540" marker-end="url(#ar)"/>
+  <line class="e" x1="480" y1="296" x2="480" y2="516" marker-end="url(#ar)"/>
 
-  <rect class="dec" x="530" y="408" width="330" height="38" rx="3"/>
-  <text class="s" x="695" y="432" text-anchor="middle">¿respondió con datos?</text>
-  <line class="e" x1="695" y1="446" x2="695" y2="454" marker-end="url(#ar)"/>
+  <!-- Pedir más datos: el destino nuevo -->
+  <rect class="ask" x="332" y="596" width="296" height="52" rx="3"/>
+  <text class="t" x="480" y="618" text-anchor="middle">Pedir el dato que falta</text>
+  <text class="s" x="480" y="636" text-anchor="middle">qué documento, o una palabra que acote</text>
 
-  <rect class="txn" x="530" y="458" width="330" height="32" rx="3"/>
-  <text class="t" x="695" y="479" text-anchor="middle">Estado, importe y fecha</text>
+  <path class="ea" d="M 288 311 L 330 311 L 330 610 L 332 610" marker-end="url(#arA)"/>
+  <text class="la" x="292" y="307">sin evidencia</text>
 
-  <path class="ed" d="M 860 327 L 878 327 L 878 556 L 848 556" marker-end="url(#arD)"/>
-  <path class="ed" d="M 860 427 L 878 427"/>
+  <path class="ea" d="M 288 453 L 312 453 L 312 604 L 332 604" marker-end="url(#arA)"/>
+  <text class="la" x="316" y="447">no anclada</text>
 
-  <rect class="dny" x="60" y="530" width="780" height="52" rx="3"/>
-  <text class="t" x="450" y="552" text-anchor="middle">Contacto humano</text>
-  <text class="s" x="450" y="570" text-anchor="middle">resumen del caso · transcripción · ticket · cola de agente</text>
+  <path class="ea" d="M 672 311 L 640 311 L 640 616 L 628 616" marker-end="url(#arA)"/>
+  <text class="la" x="646" y="562">no es suya:</text>
+  <text class="la" x="646" y="576">ofrece las suyas</text>
 
-  <text class="l" x="22" y="604">— camino normal</text>
-  <text class="ld" x="190" y="604">- - - rama negativa: siempre al humano</text>
+  <!-- Contacto humano -->
+  <rect class="dny" x="652" y="452" width="256" height="70" rx="3"/>
+  <text class="t" x="780" y="475" text-anchor="middle">Contacto humano</text>
+  <text class="s" x="780" y="494" text-anchor="middle">caso guardado con folio y motivo;</text>
+  <text class="s" x="780" y="511" text-anchor="middle">el cliente deja cómo contactarle</text>
+
+  <path class="ed" d="M 628 622 L 780 622 L 780 526" marker-end="url(#arD)"/>
+  <text class="ld" x="700" y="614" text-anchor="middle">si la persona lo pide</text>
+
+  <path class="ed" d="M 620 152 L 936 152 L 936 487 L 908 487" marker-end="url(#arD)"/>
+  <text class="ld" x="930" y="144" text-anchor="end">fuera de alcance · inyección · proveedor caído</text>
 </svg>
