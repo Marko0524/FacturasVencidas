@@ -351,7 +351,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             turno = memoria.anotar(
                 conversacion,
                 customer_email,
-                pregunta=payload.pregunta,
+                # La redactada, no la que llegó. Quitar un RFC del prompt y
+                # dejarlo escrito en la tabla de turnos no protege de nada:
+                # seguiría ahí en el respaldo, y volvería al prompt en cuanto
+                # esa conversación se retomara.
+                pregunta=respuesta.question or payload.pregunta,
                 respuesta=respuesta.text,
                 documento=respuesta.data.get("documento") or citado,
             )
@@ -365,7 +369,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 respuesta.reference,
                 customer_email,
                 intencion=respuesta.intent,
-                pregunta=payload.pregunta,
+                pregunta=respuesta.question or payload.pregunta,
                 motivo=respuesta.reason,
             )
 

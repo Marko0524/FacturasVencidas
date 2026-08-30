@@ -346,3 +346,50 @@ def test_the_assistant_speaks_to_the_customer_the_same_way_throughout(assistant)
     culpables = [t for t in textos if any(p in t.lower() for p in tuteo)]
 
     assert culpables == []
+
+
+# --- datos personales fuera del prompt ---------------------------------------
+
+
+def test_personal_data_never_reaches_the_model(assistant):
+    """El prompt es lo que viaja a un proveedor externo y queda en sus trazas."""
+    visto = []
+
+    class Espia(FakeProvider):
+        def complete(self, *, system: str, user: str, max_tokens: int = 800) -> str:
+            visto.append(user)
+            return super().complete(system=system, user=user, max_tokens=max_tokens)
+
+    assistant._provider = Espia()  # noqa: SLF001 - test seam
+
+    assistant.ask(
+        "mi RFC es GME180922K41, ¿cuál es mi deducible?", LOGISTICA, today=TODAY
+    )
+
+    assert visto, "el proveedor no llegó a llamarse"
+    assert all("GME180922K41" not in u for u in visto)
+    assert any("[RFC]" in u for u in visto)
+
+
+def test_the_processed_question_is_what_gets_stored(assistant):
+    """Quitarlo del prompt y dejarlo en la tabla de turnos no protege de nada:
+    seguiría en el respaldo, y volvería al prompt al retomar la conversación."""
+    resultado = assistant.ask(
+        "escríbanme a marco@ejemplo.mx sobre mi deducible", LOGISTICA, today=TODAY
+    )
+
+    assert "marco@ejemplo.mx" not in resultado.question
+    assert "[correo]" in resultado.question
+
+
+def test_redaction_does_not_break_the_invoice_route(assistant):
+    """El folio tiene forma de número largo. Si la redacción se lo comiera, la
+    consulta llegaría sin número y se respondería con el resumen de la cuenta
+    — que parece una respuesta razonable, y por eso el fallo no daría la cara.
+    """
+    resultado = assistant.ask(
+        "mi RFC es GME180922K41, ¿cómo va la factura INV-2001?", LOGISTICA, today=TODAY
+    )
+
+    assert "$98,500.00 MXN" in resultado.text
+    assert "INV-2001" in resultado.question

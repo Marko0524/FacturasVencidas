@@ -14,7 +14,7 @@ El dominio es común a todos los bloques: **LeaseMD** administra pólizas y fact
 |---|---|---|---|
 | **1** · Aterrizaje | Convertir un requerimiento ambiguo en un alcance comprometible | Documentación de ingeniería | §11 · [documento](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx) |
 | **2** · Automatización | Recordatorios de pago y escalamiento a Operaciones | Python, `requests`, pytest, Docker | §1–§10 · `app/`, `main.py`, `tests/` |
-| **3** · Asistente de IA | Responder dudas de pólizas y facturación con gobierno de datos | Azure OpenAI / Vertex AI / Gemini, pgvector, FastAPI, React | §13 · [diseño](docs/asistente-ia.md), [diagramas](docs/diagramas) e **[implementación](asistente/)** — 319 pruebas |
+| **3** · Asistente de IA | Responder dudas de pólizas y facturación con gobierno de datos | Azure OpenAI / Vertex AI / Gemini, pgvector, FastAPI, React | §13 · [diseño](docs/asistente-ia.md), [diagramas](docs/diagramas) e **[implementación](asistente/)** — 341 pruebas |
 | **4** · Conceptuales | Siete preguntas técnicas, ancladas en este código | — | §14 · [respuestas](docs/preguntas-tecnicas.md) |
 | **5** · SQL *(bonus)* | Facturas vencidas y saldo por cliente | T-SQL / Azure SQL | §12 · [consultas](sql/consultas.sql) |
 | **6** · Low-code *(bonus)* | Este mismo job en Power Automate frente a Python | — | §15 · [comparación](docs/low-code-vs-codigo.md) |
@@ -593,7 +593,7 @@ Igual que en el código Python, la fecha de hoy es un parámetro y no `GETDATE()
 
 ## 13. Asistente interno de IA
 
-Diseño de arquitectura y flujo en [`docs/asistente-ia.md`](docs/asistente-ia.md), con los diagramas como SVG versionados en [`docs/diagramas/`](docs/diagramas). **Y una implementación que corre**, en [`asistente/`](asistente): 319 pruebas, Postgres con pgvector, y el proveedor de modelo intercambiable entre Azure OpenAI, Vertex AI y Gemini.
+Diseño de arquitectura y flujo en [`docs/asistente-ia.md`](docs/asistente-ia.md), con los diagramas como SVG versionados en [`docs/diagramas/`](docs/diagramas). **Y una implementación que corre**, en [`asistente/`](asistente): 341 pruebas, Postgres con pgvector, y el proveedor de modelo intercambiable entre Azure OpenAI, Vertex AI y Gemini.
 
 **Decisión:** Azure OpenAI con RAG, orquestado desde un backend en Python (FastAPI) con una SPA en React — no Copilot Studio. La razón va más allá del stack: las dos intenciones necesitan *formas de datos distintas*. Las pólizas son documentos y se resuelven con recuperación semántica; el estado de una factura es un dato transaccional, vivo y con permisos por cliente, que se resuelve llamando al sistema de registro. Indexar facturas en un almacén vectorial dejaría el dato desactualizado y convertiría el índice en un canal de fuga entre clientes.
 

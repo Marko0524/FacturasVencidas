@@ -33,6 +33,7 @@ from app.guardrails import (
     sanitize_question,
 )
 from app.invoices import InvoiceStore
+from app.pii import redactar
 from app.providers.base import LlmProvider, ProviderError
 from app.retrieval import Retriever, ScoredChunk
 
@@ -392,6 +393,11 @@ class Answer:
     reason: str = ""
     data: dict = field(default_factory=dict)
     reference: str = ""
+    # La pregunta tal como se procesó: saneada y con los datos personales ya
+    # sustituidos por su etiqueta. Es la que se guarda en la conversación y en
+    # el caso escalado, para que el dato original no sobreviva en ningún sitio
+    # solo porque el registro se hizo en otra capa.
+    question: str = ""
 
     def as_dict(self) -> dict:
         return {
@@ -449,12 +455,31 @@ class Assistant:
         if pedir_humano:
             return self._sellar(
                 self._escalate(INTENT_HUMAN, "el cliente pidió hablar con una persona"),
-                run_date,
-                customer_email,
+                run_date, customer_email, question,
             )
 
+        # Higiene de la entrada, antes de clasificar, de recuperar y de cualquier
+        # prompt. Vive aquí y no en el borde de la API a propósito: así ninguna
+        # ruta futura puede llegar al modelo saltándose este paso por descuido.
+        try:
+            limpia = sanitize_question(question, self._settings.max_question_chars)
+        except ValueError as exc:
+            return self._sellar(
+                self._escalate(INTENT_HUMAN, str(exc)), run_date, customer_email, ""
+            )
+
+        redaccion = redactar(limpia)
+        if redaccion.hubo:
+            # Solo los tipos. Registrar el valor aquí anularía el propósito de
+            # haberlo quitado del prompt.
+            logger.info(
+                "Datos personales redactados tipos=%s customer=%s",
+                ",".join(redaccion.tipos), customer_email,
+            )
+        limpia = redaccion.texto
+
         respuesta = self._route(
-            question,
+            limpia,
             customer_email,
             run_date,
             historial=historial,
@@ -462,14 +487,20 @@ class Assistant:
             avisar=progreso or (lambda _etapa: None),
         )
 
-        return self._sellar(respuesta, run_date, customer_email)
+        return self._sellar(respuesta, run_date, customer_email, limpia)
 
-    def _sellar(self, respuesta: Answer, run_date: date, customer_email: str) -> Answer:
-        """Pone el folio, en el único punto por el que pasan todas las ramas.
+    def _sellar(
+        self, respuesta: Answer, run_date: date, customer_email: str, pregunta: str
+    ) -> Answer:
+        """Pone el folio y la pregunta procesada, en el único punto por el que
+        pasan todas las ramas.
 
         Pasar el cliente a cada `_escalate` habría sido lo mismo repetido
-        dieciocho veces, con dieciocho sitios donde olvidarlo.
+        dieciocho veces, con dieciocho sitios donde olvidarlo. Lo mismo vale
+        para la pregunta ya redactada: si cada rama tuviera que acordarse de
+        adjuntarla, la que se olvidara guardaría el original con el dato dentro.
         """
+        respuesta.question = pregunta
         if respuesta.escalated:
             respuesta.reference = _reference(
                 respuesta.intent, respuesta.reason, run_date, customer_email
@@ -486,11 +517,7 @@ class Assistant:
         documento: str,
         avisar: Callable[[str], None],
     ) -> Answer:
-        try:
-            question = sanitize_question(question, self._settings.max_question_chars)
-        except ValueError as exc:
-            return self._escalate(INTENT_HUMAN, str(exc))
-
+        """Rutea una pregunta ya saneada y redactada."""
         if not customer_email:
             return self._escalate(INTENT_HUMAN, "consulta sin cliente autenticado")
 

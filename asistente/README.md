@@ -177,7 +177,7 @@ cd asistente/backend
 pytest
 ```
 
-319 pruebas. Ninguna sale a la red: el proveedor falso las hace deterministas.
+341 pruebas. Ninguna sale a la red: el proveedor falso las hace deterministas.
 
 | Archivo | Cubre |
 |---|---|
@@ -187,6 +187,7 @@ pytest
 | `test_assistant.py` | Ruteo de las intenciones, ramas que escalan y ramas que preguntan |
 | `test_ingest.py` | Troceado de cargas, tipos y tamaños, travesía de rutas, binarios renombrados |
 | `test_guardrails.py` | Citas inventadas, JSON en bloque de código, inyección, y «no lo encontré» separado del modelo que se porta mal |
+| `test_pii.py` | Redacción antes del prompt, y que **no se coma** el folio ni los importes |
 | `test_auth.py` | Firma y expiración del token de sesión |
 | `test_resolver.py` | Qué documento nombra una pregunta, y cuándo preferir preguntar |
 | `test_titulos.py` | Nombres cortos sin romper la frase al quitar el de la empresa |
@@ -262,7 +263,8 @@ Dos cosas que el guion hace a propósito: **ninguna llave viaja en la imagen** �
 - **Los documentos cargados no se versionan.** Volver a subir el mismo archivo reemplaza los fragmentos anteriores; no queda historial de lo que decía antes.
 - **La verificación de anclaje comprueba la cita, no el razonamiento.** Que un fragmento exista no demuestra que la frase se siga de él. Es una afirmación barata y verificable que encarece inventar, y falla cerrando.
 - **La detección de inyección es un cable trampa, no una frontera.** Una reescritura decidida pasa cualquier lista de patrones. La frontera real es que los documentos ajenos nunca entran al prompt y que las cifras no las escribe el modelo.
-- **Sin redacción de PII antes del modelo.** Es lo que más echo en falta: el resto de controles impide que salga un documento ajeno, pero no que entre al prompt un dato personal que nadie necesitaba enviar. Con Azure sería AI Language.
+- **La redacción de PII reconoce formatos, no nombres.** Acierta con RFC, CURP, tarjeta —con Luhn, no solo por longitud—, CLABE, correo y teléfono, porque tienen forma. Un nombre o una dirección necesitan reconocimiento de entidades; en Azure sería AI Language.
+- **La redacción vale de aquí en adelante.** Lo guardado antes de activarla conserva lo que se escribió entonces; encenderla sobre un historial existente exige además limpiarlo o acortar la retención.
 - **Sin cuota por usuario ni detección de sondeo.** Cincuenta folios distintos en cinco minutos no son una duda, y hoy nada lo nota.
 - **Sin evaluación automatizada de calidad.** La sección 5 del diseño propone el conjunto dorado y las métricas. Lo que sí existe es la señal que la alimentaría: la valoración por respuesta, con el porqué cuando es negativa.
 - **La memoria recuerda seis turnos.** Suficiente para resolver un pronombre; una conversación larga pierde el principio.

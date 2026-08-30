@@ -4,7 +4,7 @@ Diseño de arquitectura y flujo para un asistente interno de **LeaseMD** que res
 
 Comparte dominio con el job de recordatorios de este mismo repositorio: las mismas facturas, el mismo criterio de atraso y el mismo escalamiento a Operaciones. Donde el job **actúa** sin que nadie lo mire, el asistente **responde** a una persona que pregunta — y esa diferencia es la que justifica casi todas las decisiones de abajo.
 
-**Este documento describe un sistema que funciona**, no una propuesta. Hay un prototipo ejecutable en [`asistente/`](../asistente), con 319 pruebas automatizadas, y las afirmaciones sobre comportamiento que siguen están medidas contra él. Donde el diseño y lo construido difieren, lo digo.
+**Este documento describe un sistema que funciona**, no una propuesta. Hay un prototipo ejecutable en [`asistente/`](../asistente), con 341 pruebas automatizadas, y las afirmaciones sobre comportamiento que siguen están medidas contra él. Donde el diseño y lo construido difieren, lo digo.
 
 ---
 
@@ -136,7 +136,7 @@ El riesgo dominante en un asistente con RAG no es que invente: es que **entregue
 | **Recorte en la recuperación** | Cada fragmento lleva su alcance, y el predicado de visibilidad va **dentro de la consulta de ranking**. Un fragmento no permitido no es un candidato descartado: no llega a puntuar | Sí, y probado con dos cuentas |
 | **Identidad delegada** | El backend consulta con la identidad del solicitante, no con una cuenta de servicio con permisos totales | Parcial: el prototipo acota por cuenta autenticada; el *on-behalf-of* contra un ERP real queda para producción |
 | **Minimización** | Al modelo se le envían los campos que la respuesta necesita, no el objeto completo | Sí |
-| **Redacción de PII antes del modelo** | El texto del usuario pasa por detección de PII y se enmascara lo que no aporta | No en el prototipo. Con Azure sería AI Language; es la pieza que más echo en falta |
+| **Redacción de PII antes del modelo** | El texto del usuario pasa por detección y se sustituye el dato por su etiqueta, antes de clasificar, de recuperar y de cualquier prompt | Sí, para identificadores con forma: RFC, CURP, tarjeta, CLABE, correo y teléfono. Nombres y direcciones necesitarían reconocimiento de entidades — en Azure, AI Language |
 | **Telemetría sin PII** | Trazas con identificadores pseudonimizados y métricas, no texto crudo. Las transcripciones viven aparte, cifradas, con retención corta y auditoría de lectura | Parcial |
 | **Aislamiento de la memoria** | Cada conversación pertenece a una cuenta y se comprueba en cada lectura y escritura. Un identificador adivinado no abre la de otro | Sí |
 | **Sesiones** | Token firmado con HMAC y expiración dentro del cuerpo firmado. El secreto es obligatorio en producción: sin él cada instancia firmaría distinto y las sesiones se caerían al azar | Sí, y el arranque falla si falta |
@@ -161,6 +161,7 @@ El riesgo dominante en un asistente con RAG no es que invente: es que **entregue
 - **El documento recuperado es dato, no instrucción.** Separación estricta y etiquetada entre mensaje de sistema, entrada del usuario, transcripción y contexto. Un PDF con texto malicioso incrustado no puede reescribir las reglas.
 - **La memoria de conversación vive en el servidor.** Que el cliente mande el historial sería más simple y está mal: un historial que escribe el cliente se puede inventar, y ese texto acaba dentro del prompt. El cliente manda un identificador; qué se dijo lo sabe la base.
 - **Detección de intentos de inyección** sobre la entrada, con escalamiento en vez de respuesta. No es una frontera de seguridad —una reescritura decidida pasa cualquier lista— sino un cable trampa que convierte un intento probable en un escalamiento.
+- **Los datos personales no llegan al prompt.** Lo que escribe la persona pasa por redacción antes de que lo vea nada: «mi RFC es GME180922K41» viaja como «mi RFC es [RFC]». Se redacta **la entrada, no la documentación recuperada** — los documentos son suyos y un RFC en su propia carátula es justo lo que vino a consultar; redactar la evidencia rompería las respuestas sin proteger a nadie.
 - **Cuota y detección de anomalías.** Un usuario que consulta cincuenta folios distintos en cinco minutos no está resolviendo una duda; está sondeando. *Pendiente en el prototipo.*
 - **Suite adversaria en CI** con intentos de *jailbreak*, de extracción y de acceso cruzado entre cuentas. Cualquier fallo bloquea el despliegue.
 
@@ -182,7 +183,7 @@ Lo importante es **medir recuperación y generación por separado**: si la recup
 
 ### Lo que ya se mide en el prototipo
 
-Las **319 pruebas** cubren el ruteo, el aislamiento entre cuentas, el anclaje y los negativos. Las que más valor tienen son las que fijan que dos casos distintos se lean idénticos: una factura ajena y una inexistente, por ejemplo.
+Las **341 pruebas** cubren el ruteo, el aislamiento entre cuentas, el anclaje y los negativos. Las que más valor tienen son las que fijan que dos casos distintos se lean idénticos: una factura ajena y una inexistente, por ejemplo.
 
 La interfaz recoge **pulgar arriba/abajo por respuesta**, y el pulgar abajo abre un campo de texto porque el pulgar solo dice que algo falló, no qué. Es la señal que faltaba: todo el sistema está construido para callarse cuando no tiene evidencia, pero cuando **sí** respondió y se equivocó no queda rastro en ningún log —la respuesta se generó con toda normalidad—. Es el único dato que dice si el piso de similitud está bien puesto.
 
@@ -207,4 +208,6 @@ Nada de acciones que escriban: el asistente informa, no cancela pólizas ni apli
 
 Tampoco arrancaría con voz ni con múltiples idiomas, y mediría el costo por conversación desde el primer día: es la variable que decide si el piloto puede crecer.
 
-De lo que hoy falta en el prototipo, lo que pondría primero es la **redacción de PII antes del modelo**. El resto de controles impiden que salga un documento ajeno; ese impide que entre al prompt un dato personal que nadie necesitaba enviar.
+De lo que hoy falta en el prototipo, lo que pondría primero es el **reconocimiento de entidades** para completar la redacción de PII. La que hay acierta con los identificadores que tienen forma —RFC, CURP, tarjeta, CLABE, correo, teléfono— porque se pueden reconocer sin un modelo; un nombre o una dirección no. En Azure sería AI Language, delante del mismo punto donde hoy corre la redacción por patrones.
+
+Y una nota de operación que se ve en cuanto se despliega: **la redacción protege lo que entra a partir de ahora**. Las conversaciones guardadas antes de activarla conservan lo que se escribió entonces, así que encenderla en un sistema con historial exige además una pasada de limpieza o una política de retención corta. No es un detalle: es la diferencia entre proteger los datos y creer que están protegidos.
