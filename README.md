@@ -605,6 +605,16 @@ Los tres puntos que sostienen el diseño:
 
 Lo que el uso cambió sobre el diseño original, y que está en el documento con su porqué: **«no puedo responder» dejó de ser una sola cosa**. Cuando falta un dato que quien pregunta tiene delante —qué documento, una palabra que acote la búsqueda, el folio correcto— el asistente lo pide y ofrece la salida humana como un botón. Solo lo que queda fuera de alcance, la inyección y las caídas del proveedor van directas a una persona. El caso escalado ahora se guarda con folio, motivo y un contacto que deja el cliente.
 
+ kayelo3614@neowd.com  │ Logistica Pacifico │
+├───────────────────────┼────────────────────┤
+│ finanzas@meridiano.mx │ Grupo Meridiano    │
+├───────────────────────┼────────────────────┤
+│ pagos@aurora.mx       │ Comercial Aurora   │
+├───────────────────────┼────────────────────┤
+│ contabilidad@zenit.mx │ Constructora Zenit
+
+
+asistente2026
 ### Levantarlo
 
 ```bash
