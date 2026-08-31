@@ -603,32 +603,26 @@ Los tres puntos que sostienen el diseño:
 - **Las cifras no las escribe el modelo.** Importes, fechas, estatus —y también la fecha de hoy y la lista de capacidades— se insertan por código. El modelo elige la ruta y redacta alrededor del dato, nunca lo produce.
 - **Nada se afirma sin evidencia.** Si la respuesta cita un fragmento que no se recuperó —la firma exacta de una respuesta fabricada— se descarta.
 
-Lo que el uso cambió sobre el diseño original, y que está en el documento con su porqué: **«no puedo responder» dejó de ser una sola cosa**. Cuando falta un dato que quien pregunta tiene delante —qué documento, una palabra que acote la búsqueda, el folio correcto— el asistente lo pide y ofrece la salida humana como un botón. Solo lo que queda fuera de alcance, la inyección y las caídas del proveedor van directas a una persona. El caso escalado ahora se guarda con folio, motivo y un contacto que deja el cliente.
+### Probarlo en vivo
 
- kayelo3614@neowd.com  │ Logistica Pacifico │
-├───────────────────────┼────────────────────┤
-│ finanzas@meridiano.mx │ Grupo Meridiano    │
-├───────────────────────┼────────────────────┤
-│ pagos@aurora.mx       │ Comercial Aurora   │
-├───────────────────────┼────────────────────┤
-│ contabilidad@zenit.mx │ Constructora Zenit
+<https://mhns6gbq-5173.usw3.devtunnels.ms/>
 
+Para validar el asistente puedes ingresar con los siguientes datos. La contraseña es `asistente2026` en las cuatro cuentas:
 
-asistente2026
-### Levantarlo
+| Cuenta | Cliente |
+|---|---|
+| `pagos@aurora.mx` | Comercial Aurora |
+| `finanzas@meridiano.mx` | Grupo Meridiano |
+| `kayelo3614@neowd.com` | Logistica Pacifico |
+| `contabilidad@zenit.mx` | Constructora Zenit |
 
-```bash
-cd asistente && docker compose up -d          # Postgres con pgvector
+Entrar con dos de ellas en ventanas distintas es la forma más rápida de ver el aislamiento: los documentos, las facturas y los casos escalados de una no existen para la otra.
 
-cd backend && pip install -r requirements.txt
-PYTHONPATH=. LLM_PROVIDER=vertex RETRIEVAL_BACKEND=postgres AUTH_MODE=local \
-  SESSION_SECRET=local python -m uvicorn app.api:app --port 8000
+Si también quieres la URL en asistente/README.md, va antes de ### Base de datos (línea 97):
 
-cd ../frontend && npm install && npm run dev   # http://127.0.0.1:5173
-```
+### Probarlo en vivo
 
-Con `LLM_PROVIDER=fake` arranca sin credenciales ni red, que es como corren las pruebas. Para publicarlo en Cloud Run —un solo contenedor que sirve API e interfaz, con la identidad adjunta al servicio y ninguna llave dentro de la imagen— está [`asistente/desplegar.sh`](asistente/desplegar.sh).
-
+<https://mhns6gbq-5173.usw3.devtunnels.ms/>
 ---
 
 ## 14. Preguntas técnicas conceptuales
