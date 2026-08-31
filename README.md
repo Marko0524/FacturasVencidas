@@ -603,9 +603,6 @@ Los tres puntos que sostienen el diseño:
 - **Las cifras no las escribe el modelo.** Importes, fechas, estatus —y también la fecha de hoy y la lista de capacidades— se insertan por código. El modelo elige la ruta y redacta alrededor del dato, nunca lo produce.
 - **Nada se afirma sin evidencia.** Si la respuesta cita un fragmento que no se recuperó —la firma exacta de una respuesta fabricada— se descarta.
 
-### Probarlo en vivo
-
-<https://mhns6gbq-5173.usw3.devtunnels.ms/>
 
 Para validar el asistente puedes ingresar con los siguientes datos. La contraseña es `asistente2026` en las cuatro cuentas:
 
