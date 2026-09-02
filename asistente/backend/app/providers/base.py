@@ -20,6 +20,23 @@ class ProviderError(Exception):
     """
 
 
+# Los modelos razonadores de la familia Gemini 2.5 cobran lo que piensan contra
+# `maxOutputTokens`: el razonamiento y la respuesta salen de la misma bolsa. Sin
+# un tope, pensar se come el presupuesto y la respuesta vuelve cortada a media
+# frase — que es peor que un fallo, porque un JSON truncado se lee como un modelo
+# que se porta mal en vez de como un presupuesto que no alcanzó.
+#
+# Se reserva un cuarto para pensar y nunca más de este tope. La fracción importa
+# porque las llamadas no piden lo mismo: al clasificador le bastan 512 en total,
+# y un presupuesto fijo de razonamiento se los comería enteros.
+MAX_THINKING_TOKENS = 512
+
+
+def presupuesto_de_razonamiento(max_tokens: int) -> int:
+    """Cuánto puede pensar el modelo sin dejar a la respuesta sin sitio."""
+    return min(MAX_THINKING_TOKENS, max(0, max_tokens // 4))
+
+
 @runtime_checkable
 class LlmProvider(Protocol):
     """What the assistant requires of a model provider."""

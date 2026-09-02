@@ -198,6 +198,41 @@ def test_an_answer_truncated_before_any_text_becomes_an_error():
         gemini(session).complete(system="s", user="u")
 
 
+def test_an_answer_truncated_after_some_text_becomes_an_error():
+    """El fallo real que se vio contra Vertex, y que el código dejaba pasar.
+
+    El razonamiento se cobra contra ``maxOutputTokens``: gastó 1962 de 2048
+    pensando y devolvió 82 de JSON, cortado a media frase. Como sí había texto,
+    volvía arriba y el guardarraíl lo rechazaba por "no es JSON válido" — un
+    mensaje que manda a revisar el prompt cuando lo que faltaron fueron tokens.
+    """
+    truncada = FakeResponse(200, {"candidates": [{
+        "finishReason": "MAX_TOKENS",
+        "content": {"parts": [{"text": '```json\n{"respuesta": "El deducible es de $5,0'}]},
+    }]})
+    session = FakeSession([truncada])
+
+    with pytest.raises(ProviderError, match="MAX_TOKENS"):
+        gemini(session).complete(system="s", user="u")
+
+
+def test_thinking_never_gets_the_whole_budget():
+    """Sin tope, pensar deja a la respuesta sin sitio y el JSON vuelve cortado.
+
+    El reparto es una fracción y no una constante porque las llamadas no piden
+    lo mismo: al clasificador le bastan 512 en total, y un presupuesto fijo de
+    razonamiento se los comería enteros.
+    """
+    for max_tokens, esperado in ((2048, 512), (3000, 512), (512, 128)):
+        session = FakeSession([GEMINI_OK])
+
+        gemini(session).complete(system="s", user="u", max_tokens=max_tokens)
+
+        config = session.calls[0]["json"]["generationConfig"]
+        assert config["thinkingConfig"]["thinkingBudget"] == esperado
+        assert config["thinkingConfig"]["thinkingBudget"] < config["maxOutputTokens"]
+
+
 def test_embeddings_come_back_in_the_order_they_were_asked_for():
     session = FakeSession(
         [FakeResponse(200, {"data": [

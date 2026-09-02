@@ -129,7 +129,7 @@ También siembra las cuatro cuentas de demostración, todas con la contraseña `
 |---|---|
 | `pagos@aurora.mx` | Comercial Aurora |
 | `finanzas@meridiano.mx` | Grupo Meridiano |
-| `cobranza@logisticapacifico.mx` | Logistica Pacifico |
+| `kayelo3614@neowd.com` | Logistica Pacifico |
 | `contabilidad@zenit.mx` | Constructora Zenit |
 
 Entrar con dos de ellas en ventanas distintas es la forma más rápida de comprobar el aislamiento: los documentos, las facturas, las conversaciones y los casos escalados de una no existen para la otra.

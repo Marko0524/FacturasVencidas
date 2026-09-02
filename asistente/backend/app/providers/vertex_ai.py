@@ -29,7 +29,7 @@ import logging
 import requests
 
 from app.config import VertexSettings
-from app.providers.base import ProviderError
+from app.providers.base import ProviderError, presupuesto_de_razonamiento
 from app.providers.http import post_json
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,11 @@ class VertexAIProvider:
         payload = {
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": user}]}],
-            "generationConfig": {"temperature": 0, "maxOutputTokens": max_tokens},
+            "generationConfig": {
+                "temperature": 0,
+                "maxOutputTokens": max_tokens,
+                "thinkingConfig": {"thinkingBudget": presupuesto_de_razonamiento(max_tokens)},
+            },
         }
         data = self._post(self._settings.chat_model, "generateContent", payload)
         return self._first_text(data)
@@ -143,6 +147,15 @@ class VertexAIProvider:
             raise ProviderError(
                 f"Vertex AI returned an empty answer "
                 f"(finishReason={candidate.get('finishReason')})"
+            )
+        # Una respuesta a medias es peor que ninguna: el JSON cortado llega
+        # arriba como "el modelo no devuelve JSON válido", que manda a leer el
+        # prompt cuando lo que faltaron fueron tokens. Se dice aquí, donde se
+        # sabe por qué.
+        if candidate.get("finishReason") == "MAX_TOKENS":
+            raise ProviderError(
+                "Vertex AI truncated the answer (finishReason=MAX_TOKENS): "
+                "raise max_tokens or lower the thinking budget"
             )
         return text
 
