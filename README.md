@@ -721,25 +721,25 @@ Lo que quedó fuera a propósito por el alcance de la prueba:
 
 ## 18. Cómo se construyó: proceso y uso de IA
 
-> **Pendiente de completar por el autor antes de entregar.** Los textos entre corchetes son huecos; sustitúyelos por lo que realmente hiciste. Es mejor una sección corta y exacta que una larga y aproximada: el evaluador va a preguntar sobre esto en la entrevista.
+Este entregable se construyó con apoyo de IA generativa, y prefiero decirlo explícitamente: para un puesto de automatización, saber usarla con criterio es parte del trabajo, y ocultarlo diría más de mí que usarla.
 
-Este entregable se construyó con apoyo de herramientas de IA generativa, y prefiero decirlo explícitamente: para un puesto de automatización, saber usarlas con criterio es parte del trabajo, y ocultarlo diría más de mí que usarlas.
-
-**Herramientas.** [Nombra la o las herramientas: p. ej. Claude Code / GitHub Copilot / ChatGPT, y en qué editor.] Las notas de trabajo y los prompts vivieron en un `PROMPT.md` local que no forma parte del entregable (está en `.gitignore`).
+**Herramientas.** Claude, de Anthropic, tanto en el chat como en su modo de agente sobre el repositorio. No usé otros asistentes. El punto de partida fue una especificación que escribí antes de generar una sola línea de código, `PROMPT.md`: ahí fijé el escenario, el contrato de la API, las reglas de negocio con sus bordes (10 días → solo recordatorio, 11 → recordatorio y alerta), los cinco puntos que la idempotencia debía razonar, la política de reintentos (qué códigos sí y cuáles no), la estructura de módulos, el dataset mínimo, las pruebas obligatorias y la regla rectora de todo el proyecto: *una solución pequeña que funcione perfecto y se explique sola, antes que una arquitectura sobredimensionada*. Ese archivo es material de trabajo, no del entregable, y está en `.gitignore`.
 
 **Para qué se usó la IA.**
 
-- [Ajusta esta lista a la realidad.] Generar el esqueleto inicial del proyecto (estructura de módulos, `Dockerfile`, `.gitignore`, primeras pruebas) a partir de un diseño que definí antes por escrito.
-- Redactar y pulir la documentación en español a partir de mis notas y de las decisiones ya tomadas.
-- Proponer casos de prueba adicionales para los bordes (10/11 días, archivo de estado corrupto, `Retry-After` inválido).
-- Revisar el código en busca de errores y de rutas sin cubrir.
+- Generar el proyecto a partir de esa especificación: módulos, `Dockerfile`, `.gitignore`, `.env.example`, la primera versión de las pruebas y del README.
+- Proponer las alternativas de diseño que la especificación dejaba abiertas a propósito, con sus trade-offs, para decidir entre ellas (ver el siguiente apartado).
+- Ampliar la cobertura en los bordes: 10/11 días, archivo de estado corrupto, `Retry-After` inválido, `.env` con comillas y con `=` dentro de la contraseña.
+- Redactar y pulir la documentación en español a partir de mis notas y de las decisiones ya tomadas, y revisar la consistencia entre archivos (nombres de variables, cifras, referencias cruzadas).
+- Preparar el repositorio para su evaluación: el flujo de CI, `scripts/demo.py` y la corrección de inconsistencias en este README.
 
-**Qué decidí yo y qué verifiqué a mano.** [Sé concreto; estos son los puntos que un evaluador querrá que defiendas sin mirar el README.]
+**Qué decidí yo y qué verifiqué a mano.**
 
-- La clave de idempotencia `invoice_id | type | run_date` y la elección *at-least-once* (marcar después del envío) — [decidido por mí / propuesto por la IA y adoptado tras comparar alternativas].
-- Los reintentos selectivos con full jitter y respeto a `Retry-After`, en bucle explícito en lugar de `urllib3.Retry` — [ídem].
-- El filtro SQL sin función sobre la columna indexada y el `CAST` en el promedio — [ídem].
+- El marco fue mío: alcance, reglas, restricciones (solo `requests` y `pytest`, versiones fijadas, código en inglés y documentación en español, fecha inyectable, ningún secreto en código ni en imagen) y el orden de sacrificio si algo había que recortar. La IA trabajó dentro de esos límites.
+- La clave de idempotencia `invoice_id | type | run_date` con política *at-least-once* (marcar después del envío): la especificación exigía razonar clave, granularidad y momento de la marca; la IA propuso esta combinación, la comparé contra incluir `days_overdue` (re-notifica a diario) y contra marcar antes del envío (pierde notificaciones si el envío falla), y la adopté porque para un job diario un duplicado es más barato que un silencio.
+- Los reintentos en bucle explícito con *full jitter* y respeto a `Retry-After`, en lugar de `urllib3.Retry`: la especificación dejaba las dos opciones y pedía justificar una; adopté el bucle propio porque los criterios de reintento quedan a la vista en el mismo archivo y son fáciles de probar sin red.
+- El filtro SQL sin función sobre la columna indexada y el `CAST` en el promedio: propuestos por la IA al revisar las consultas; verifiqué ambos contra los datos de prueba (sin el `CAST`, el promedio sale `10` en lugar de `10.75`) antes de dejarlos.
 - Toda la evidencia de ejecución de este README (logs, Docker con y sin volumen, Mailpit, Gmail, fallo SMTP) la generé ejecutando el código en mi máquina; ninguna salida está inventada ni editada.
-- Las 77 pruebas pasan en local y en CI; leí cada una y descarté las que probaban la implementación en lugar del comportamiento.
+- Las 77 pruebas pasan en local y en CI; las leí una por una y descarté las que probaban la implementación en lugar del comportamiento.
 
-**Qué haría distinto.** [Opcional pero valioso.] Por ejemplo: commits más pequeños desde el inicio para que el historial cuente cómo se llegó al resultado, y declarar esta sección desde el primer commit en vez de al final.
+**Qué haría distinto.** Commits más pequeños desde el inicio, para que el historial contara cómo se llegó al resultado en vez de llegar de golpe con el primero; y declarar esta sección desde el primer commit en lugar de al final.
