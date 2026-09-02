@@ -604,21 +604,6 @@ Los tres puntos que sostienen el diseño:
 - **Nada se afirma sin evidencia.** Si la respuesta cita un fragmento que no se recuperó —la firma exacta de una respuesta fabricada— se descarta.
 
 
-Para validar el asistente puedes ingresar con los siguientes datos. La contraseña es `asistente2026` en las cuatro cuentas:
-
-| Cuenta | Cliente |
-|---|---|
-| `pagos@aurora.mx` | Comercial Aurora |
-| `finanzas@meridiano.mx` | Grupo Meridiano |
-| `kayelo3614@neowd.com` | Logistica Pacifico |
-| `contabilidad@zenit.mx` | Constructora Zenit |
-
-Entrar con dos de ellas en ventanas distintas es la forma más rápida de ver el aislamiento: los documentos, las facturas y los casos escalados de una no existen para la otra.
-
-### Probarlo en vivo
-
-<https://mhns6gbq-5173.usw3.devtunnels.ms/>
----
 
 ## 14. Preguntas técnicas conceptuales
 
