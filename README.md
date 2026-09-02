@@ -615,8 +615,6 @@ Para validar el asistente puedes ingresar con los siguientes datos. La contrase�
 
 Entrar con dos de ellas en ventanas distintas es la forma más rápida de ver el aislamiento: los documentos, las facturas y los casos escalados de una no existen para la otra.
 
-Si también quieres la URL en asistente/README.md, va antes de ### Base de datos (línea 97):
-
 ### Probarlo en vivo
 
 <https://mhns6gbq-5173.usw3.devtunnels.ms/>
