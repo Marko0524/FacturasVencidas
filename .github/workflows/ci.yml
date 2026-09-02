@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    name: pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Compilar (detecta errores de sintaxis sin ejecutar nada)
+        run: python -m compileall -q app main.py scripts
+
+      - name: Pruebas del job de recordatorios
+        run: pytest -q
+
+      - name: Corrida de humo sin red, dos veces (la segunda debe omitir todo)
+        run: |
+          python scripts/refresh_sample_data.py
+          python main.py
+          python main.py | tee segunda.log
+          grep -q "reminders=0 alerts=0 skipped=12 errors=0" segunda.log
+
+  docker:
+    name: docker build
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construir la imagen
+        run: docker build -t invoice-reminder .
+
+      - name: La imagen corre como usuario no privilegiado y sin archivos de desarrollo
+        run: |
+          docker run --rm --entrypoint sh invoice-reminder -c "id -u; ls /app" | tee imagen.log
+          grep -qx "1001" imagen.log
+          ! grep -qE "tests|scripts|\.env" imagen.log
+
+      - name: Corrida de humo dentro del contenedor
+        run: docker run --rm invoice-reminder

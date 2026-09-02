@@ -1,6 +1,53 @@
 # Invoice Reminder — Recordatorio de Pagos
 
+[![CI](https://github.com/Marko0524/FacturasVencidas/actions/workflows/ci.yml/badge.svg)](https://github.com/Marko0524/FacturasVencidas/actions/workflows/ci.yml)
+
 Automatiza el seguimiento de facturas vencidas: consulta las facturas, aplica las reglas de negocio, notifica al cliente y escala a Operaciones cuando el atraso lo amerita — sin duplicar notificaciones si el proceso se vuelve a ejecutar.
+
+## Inicio rápido
+
+Sin `.env`, sin red y sin configuración previa. Requiere Python 3.11+.
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+pytest                      # 77 pruebas, ~1 s, sin red
+python main.py              # corrida 1: envía (simulado en log)
+python main.py              # corrida 2: skipped=12, no reenvía nada
+```
+
+Para ver la secuencia completa de la demo en un solo comando (corrida normal, corrida idempotente, dataset refrescado y API caída con reintentos):
+
+```bash
+python scripts/demo.py
+```
+
+Los detalles de cada paso están en [§4 Ejecución local](#4-ejecución-local), [§5 Docker](#5-docker) y [§6 Pruebas](#6-pruebas).
+
+<details>
+<summary><strong>Índice</strong></summary>
+
+1. [Descripción](#1-descripción)
+2. [Arquitectura](#2-arquitectura)
+3. [Configuración](#3-configuración)
+4. [Ejecución local](#4-ejecución-local) · [4.1 Mailpit](#41-envío-real-de-correo-con-mailpit) · [4.2 Entrega real a internet](#42-entrega-real-a-internet)
+5. [Docker](#5-docker)
+6. [Pruebas](#6-pruebas)
+7. [Manejo de errores e idempotencia](#7-manejo-de-errores-e-idempotencia)
+8. [Consideraciones de seguridad](#8-consideraciones-de-seguridad)
+9. [Salida de ejemplo](#9-salida-de-ejemplo) · [9.1 Envío real por SMTP](#91-envío-real-por-smtp)
+10. [Despliegue en Azure](#10-despliegue-en-azure)
+11. [Aterrizaje del requerimiento](#11-aterrizaje-del-requerimiento)
+12. [Consultas SQL](#12-consultas-sql)
+13. [Asistente interno de IA](#13-asistente-interno-de-ia)
+14. [Preguntas técnicas conceptuales](#14-preguntas-técnicas-conceptuales)
+15. [Power Automate frente a Python](#15-power-automate-frente-a-python)
+16. [Demostración en video](#16-demostración-en-video)
+17. [Limitaciones y siguientes pasos](#17-limitaciones-y-siguientes-pasos)
+18. [Cómo se construyó: proceso y uso de IA](#18-cómo-se-construyó-proceso-y-uso-de-ia)
+
+</details>
+
+---
 
 **[Documento de aterrizaje del requerimiento](docs/Bloque%201%20-%20Aterrizaje%20de%20Requerimiento.docx)** — el alcance acordado, los supuestos y las preguntas de las que salen las reglas de abajo.
 
@@ -249,7 +296,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-71 pruebas, todas deterministas: `today` se inyecta siempre, no hay llamadas de red ni sockets SMTP y no se duerme de verdad (`sleep` es inyectable).
+77 pruebas (63 funciones, algunas parametrizadas), todas deterministas: `today` se inyecta siempre, no hay llamadas de red ni sockets SMTP y no se duerme de verdad (`sleep` es inyectable).
 
 | Archivo | Cubre |
 |---|---|
@@ -258,6 +305,10 @@ pytest
 | `test_api_client.py` | Qué se reintenta y qué no, `Retry-After`, crecimiento del backoff, cabecera Bearer, fuente de archivo |
 | `test_notifier.py` | Destinatarios y contenido del correo, TLS y credenciales solo si están configuradas, fallos SMTP → `NotificationError`, elección del canal |
 | `test_config.py` | Carga del `.env`: precedencia del entorno real, comentarios, comillas, contraseñas con `=`, archivo ausente |
+
+La suite corre en cada push y pull request con GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): `pytest` en Python 3.11 y 3.12, `python -m compileall` sobre `app/` y `main.py`, y la construcción de la imagen Docker. Ningún cambio llega a `main` sin pasar por ahí.
+
+> El asistente del bloque 3 tiene su propia suite en `asistente/backend/` (341 pruebas) con sus propias dependencias; se ejecuta por separado, como explica `pytest.ini`.
 
 ---
 
@@ -342,6 +393,8 @@ La interfaz de `NotificationStore` (`was_processed` / `mark_processed`) está pe
 ## 9. Salida de ejemplo
 
 Ejecución real, dataset del repositorio, fecha de referencia 2026-08-29.
+
+> Las fechas del dataset son relativas al día en que se generó. Si lo ejecutas otro día sin refrescarlo, los días de atraso crecen y alguna factura cruza el umbral (por ejemplo `INV-1004` pasa de 10 a 11+ días y aparece `alerts=5`). Para reproducir exactamente estas cifras: `python scripts/refresh_sample_data.py` y después `python main.py`.
 
 **Primera ejecución:**
 
@@ -510,7 +563,7 @@ Las cuatro cuentas del asistente ([bloque 3](asistente/)) tienen aquí facturas 
 
 ---
 
-## 10. Deployment in Azure
+## 10. Despliegue en Azure
 
 ### Opción A — Azure Functions (Timer Trigger)
 
@@ -603,7 +656,9 @@ Los tres puntos que sostienen el diseño:
 - **Las cifras no las escribe el modelo.** Importes, fechas, estatus —y también la fecha de hoy y la lista de capacidades— se insertan por código. El modelo elige la ruta y redacta alrededor del dato, nunca lo produce.
 - **Nada se afirma sin evidencia.** Si la respuesta cita un fragmento que no se recuperó —la firma exacta de una respuesta fabricada— se descarta.
 
+Cómo levantarlo, las cuatro cuentas de demostración que siembra localmente y cómo comprobar el aislamiento entre clientes (entrar con dos de ellas en ventanas distintas: los documentos, facturas y casos escalados de una no existen para la otra) están en el [README del asistente](asistente/README.md). La URL de un despliegue de prueba, si se ofrece, se comparte con el evaluador por separado y no se versiona.
 
+---
 
 ## 14. Preguntas técnicas conceptuales
 
@@ -637,7 +692,7 @@ Donde Power Automate gana de verdad: humanos en el ciclo (aprobaciones, tarjetas
 Recorrido de la solución en ejecución:
 
 1. **Estructura** — separación por responsabilidad; reglas de negocio como funciones puras.
-2. **Primera corrida** — nueve facturas leídas, una descartada por fecha inválida sin abortar el lote.
+2. **Primera corrida** — las facturas se leen del dataset y una se descarta por fecha inválida sin abortar el lote. *El video se grabó con una versión anterior del dataset (9 facturas); el dataset actual tiene 16 (ver [§9](#el-dataset)), pero el flujo y las reglas son los mismos.*
 3. **Envío de correo real** — los recordatorios y las alertas llegando a una bandeja, con el contenido que ve el destinatario ([§9.1](#91-envío-real-por-smtp)).
 4. **Idempotencia** — el mismo comando el mismo día no envía ni un recordatorio repetido.
 5. **Manejo de errores** — API inalcanzable: reintentos con backoff creciente y código de salida distinto de cero.
@@ -661,3 +716,30 @@ Lo que quedó fuera a propósito por el alcance de la prueba:
 - **`Retry-After` solo en formato de segundos**; la variante con fecha HTTP cae al backoff normal.
 - **Sin paginación** en el cliente de API, conforme al contrato definido.
 - **Fechas naive en hora local.** Con clientes en varias zonas horarias habría que fijar la zona de negocio explícitamente, porque "vencida" es una afirmación relativa a un huso.
+
+---
+
+## 18. Cómo se construyó: proceso y uso de IA
+
+> **Pendiente de completar por el autor antes de entregar.** Los textos entre corchetes son huecos; sustitúyelos por lo que realmente hiciste. Es mejor una sección corta y exacta que una larga y aproximada: el evaluador va a preguntar sobre esto en la entrevista.
+
+Este entregable se construyó con apoyo de herramientas de IA generativa, y prefiero decirlo explícitamente: para un puesto de automatización, saber usarlas con criterio es parte del trabajo, y ocultarlo diría más de mí que usarlas.
+
+**Herramientas.** [Nombra la o las herramientas: p. ej. Claude Code / GitHub Copilot / ChatGPT, y en qué editor.] Las notas de trabajo y los prompts vivieron en un `PROMPT.md` local que no forma parte del entregable (está en `.gitignore`).
+
+**Para qué se usó la IA.**
+
+- [Ajusta esta lista a la realidad.] Generar el esqueleto inicial del proyecto (estructura de módulos, `Dockerfile`, `.gitignore`, primeras pruebas) a partir de un diseño que definí antes por escrito.
+- Redactar y pulir la documentación en español a partir de mis notas y de las decisiones ya tomadas.
+- Proponer casos de prueba adicionales para los bordes (10/11 días, archivo de estado corrupto, `Retry-After` inválido).
+- Revisar el código en busca de errores y de rutas sin cubrir.
+
+**Qué decidí yo y qué verifiqué a mano.** [Sé concreto; estos son los puntos que un evaluador querrá que defiendas sin mirar el README.]
+
+- La clave de idempotencia `invoice_id | type | run_date` y la elección *at-least-once* (marcar después del envío) — [decidido por mí / propuesto por la IA y adoptado tras comparar alternativas].
+- Los reintentos selectivos con full jitter y respeto a `Retry-After`, en bucle explícito en lugar de `urllib3.Retry` — [ídem].
+- El filtro SQL sin función sobre la columna indexada y el `CAST` en el promedio — [ídem].
+- Toda la evidencia de ejecución de este README (logs, Docker con y sin volumen, Mailpit, Gmail, fallo SMTP) la generé ejecutando el código en mi máquina; ninguna salida está inventada ni editada.
+- Las 77 pruebas pasan en local y en CI; leí cada una y descarté las que probaban la implementación en lugar del comportamiento.
+
+**Qué haría distinto.** [Opcional pero valioso.] Por ejemplo: commits más pequeños desde el inicio para que el historial cuente cómo se llegó al resultado, y declarar esta sección desde el primer commit en vez de al final.
